@@ -1,0 +1,22 @@
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+const api = axios.create({ baseURL: BASE_URL, timeout: 10000 });
+
+// ── Sensor ────────────────────────────────────────────────────
+export const getLatest  = ()       => api.get('/api/sensor/latest');
+
+// ── History ───────────────────────────────────────────────────
+export const getHistory = (params) => api.get('/api/history', { params });
+export const getExport  = (params) => api.get('/api/history/export', { params });
+
+// ── Alerts ────────────────────────────────────────────────────
+export const getAlerts    = (params) => api.get('/api/alerts', { params });
+export const resolveAlert = (id)     => api.patch(`/api/alerts/${id}/resolve`);
+
+// ── Control ───────────────────────────────────────────────────
+export const getControl    = ()       => api.get('/api/control');
+export const postControl   = (data)   => api.post('/api/control', data);
+
+export default api;
