@@ -11,16 +11,16 @@ function DetectorItem({ label, status, sub }) {
   const Icon = s.icon;
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
       background: s.bg, border: `1px solid ${s.border}`,
       borderRadius: 10, transition: 'all 0.3s',
       boxShadow: status === 'DANGER' ? `0 0 12px ${s.border}` : 'none',
     }}>
-      <Icon size={18} color={s.color} style={{ flexShrink: 0 }} />
+      <Icon size={16} color={s.color} style={{ flexShrink: 0 }} />
       <div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{label}</div>
-        <div style={{ fontSize: 11, color: s.color, fontWeight: 600 }}>{s.label}</div>
-        {sub && <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>{sub}</div>}
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#e2e8f0' }}>{label}</div>
+        <div style={{ fontSize: 10, color: s.color, fontWeight: 600 }}>{s.label}</div>
+        {sub && <div style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -29,10 +29,10 @@ function DetectorItem({ label, status, sub }) {
 export default function SensorStatusCard({ detectors }) {
   return (
     <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
         Status Detektor Kebakaran
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, alignContent: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flex: 1, alignContent: 'stretch' }}>
         <DetectorItem label="Smoke Detector" status={detectors.smoke}   sub="Detektor Asap"    />
         <DetectorItem label="Heat Detector"  status={detectors.heat}    sub="Heat Acc: ±0.3°C" />
         <DetectorItem label="Flame Detector" status={detectors.flame}   sub="Detektor Api"     />

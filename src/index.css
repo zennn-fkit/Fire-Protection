@@ -79,8 +79,8 @@ body {
 .card {
   background: linear-gradient(135deg, #1e2d4a 0%, #131d35 100%);
   border: 1px solid #2d3f65;
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 12px;
   position: relative;
   overflow: hidden;
   transition: border-color 0.3s, box-shadow 0.3s;

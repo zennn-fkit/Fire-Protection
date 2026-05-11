@@ -15,19 +15,19 @@ export default function WaterTankPanel({ level = 78 }) {
 
   return (
     <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
         💧 Smart Water Monitoring
       </div>
 
-      <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', flex: 1 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', flex: 1 }}>
         {/* Tank Visual */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 0 }}>
-          <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center' }}>Level Air</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0 }}>
+          <div style={{ fontSize: 9, color: '#64748b', textAlign: 'center' }}>Level Air</div>
           <div style={{
-            width: 60, height: 100, borderRadius: 8,
+            width: 48, height: 80, borderRadius: 8,
             border: `2px solid ${levelColor}60`,
             background: '#080f1e', overflow: 'hidden', position: 'relative',
-            boxShadow: `0 0 12px ${levelColor}20`,
+            boxShadow: `0 0 10px ${levelColor}20`,
           }}>
             {/* Water fill */}
             <div style={{
@@ -47,22 +47,22 @@ export default function WaterTankPanel({ level = 78 }) {
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, fontSize: 14, color: '#fff',
+              fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, fontSize: 12, color: '#fff',
             }}>
               {clampedLevel.toFixed(0)}%
             </div>
           </div>
-          <Droplets size={16} color={levelColor} />
+          <Droplets size={14} color={levelColor} />
         </div>
 
         {/* History Table */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 8, fontWeight: 600 }}>Riwayat Pemakaian Air</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+          <div style={{ fontSize: 9, color: '#64748b', marginBottom: 6, fontWeight: 600 }}>Riwayat Pemakaian Air</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
             <thead>
               <tr>
                 {['Tanggal', 'Volume (m³)', 'Status'].map(h => (
-                  <th key={h} style={{ color: '#475569', fontWeight: 700, padding: '4px 6px', textAlign: 'left', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #1a3558' }}>
+                  <th key={h} style={{ color: '#475569', fontWeight: 700, padding: '4px 6px', textAlign: 'left', fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #1a3558' }}>
                     {h}
                   </th>
                 ))}
@@ -71,11 +71,11 @@ export default function WaterTankPanel({ level = 78 }) {
             <tbody>
               {WATER_ROWS.map((r, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid rgba(26,53,88,0.4)' }}>
-                  <td style={{ padding: '5px 6px', color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace", fontSize: 10 }}>{r.date}</td>
-                  <td style={{ padding: '5px 6px', color: '#e2e8f0', fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600 }}>{r.vol.toFixed(2)}</td>
+                  <td style={{ padding: '5px 6px', color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace", fontSize: 9 }}>{r.date}</td>
+                  <td style={{ padding: '5px 6px', color: '#e2e8f0', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 600 }}>{r.vol.toFixed(2)}</td>
                   <td style={{ padding: '5px 6px' }}>
                     <span style={{
-                      fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+                      fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
                       color: r.status === 'SAVED' ? '#10b981' : '#f59e0b',
                       background: r.status === 'SAVED' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
                     }}>

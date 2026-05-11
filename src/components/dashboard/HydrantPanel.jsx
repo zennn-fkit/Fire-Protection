@@ -44,30 +44,30 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
   }, []);
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 220 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '20px 16px 0 16px', marginBottom: 10 }}>
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 150 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px', marginBottom: 8 }}>
         🚒 Smart Hydrant Monitoring
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, flex: 1, paddingBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flex: 1, paddingBottom: 12 }}>
 
         {/* Left: Hydrant Icon + Valve */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 14,
+            width: 44, height: 44, borderRadius: 12,
             background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Droplets size={28} color="#3b82f6" style={{ filter: 'drop-shadow(0 0 8px rgba(59,130,246,0.6))' }} />
+            <Droplets size={22} color="#3b82f6" style={{ filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.6))' }} />
           </div>
           <div style={{
-            padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 800,
+            padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 800,
             color: vs.color, background: vs.bg, border: `1px solid ${vs.border}`,
             letterSpacing: '0.05em', whiteSpace: 'nowrap',
           }}>
             {vs.label}
           </div>
-          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Status Katup
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
           </div>
           
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <svg width="150" height="110" viewBox="0 10 150 110" style={{ overflow: 'visible' }}>
+            <svg width="50" height="50" viewBox="0 10 150 110" style={{ overflow: 'visible' }}>
               <defs>
                 <filter id="hy-glow" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
@@ -93,20 +93,20 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
 
               {/* Background Track */}
               <path d={arcD(54, START, START + SWEEP)} fill="none"
-                stroke="#1a2b4c" strokeWidth="5" strokeLinecap="round"
+                stroke="#1a2b4c" strokeWidth="4" strokeLinecap="round"
               />
 
               {/* Ticks */}
               {ticks.map((t, i) => (
                 <line key={i} x1={t.ox} y1={t.oy} x2={t.ix} y2={t.iy}
-                  stroke="#334155" strokeWidth={t.isMajor ? "1.5" : "1"} strokeLinecap="round"
+                  stroke="#334155" strokeWidth={t.isMajor ? "1.2" : "0.9"} strokeLinecap="round"
                 />
               ))}
 
               {/* Active Value Track */}
               {pct > 0.01 && (
                 <path d={arcD(54, START, valueEndDeg)} fill="none"
-                  stroke="url(#hy-grad)" strokeWidth="5" strokeLinecap="round"
+                  stroke="url(#hy-grad)" strokeWidth="4" strokeLinecap="round"
                   filter="url(#hy-glow)"
                   style={{ transition: 'd 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                 />
@@ -114,7 +114,7 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
 
               {/* Value Dot (Thumb) */}
               {pct > 0.01 && (
-                <circle cx={dotX} cy={dotY} r={4.5} fill="#ffffff"
+                <circle cx={dotX} cy={dotY} r={3.5} fill="#ffffff"
                   filter="url(#hy-glow)"
                   style={{ transition: 'cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                 />
@@ -122,15 +122,15 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
 
               {/* Value Text */}
               <text x={CX} y={CY + 12} textAnchor="middle" fill="#ffffff"
-                fontSize="24" fontWeight="800" fontFamily="'Inter', sans-serif"
-                style={{ textShadow: `0 0 12px ${pressColor}60` }}
+                fontSize="18" fontWeight="800" fontFamily="'Inter', sans-serif"
+                style={{ textShadow: `0 0 10px ${pressColor}60` }}
               >
                 {pressure.toFixed(1)}
               </text>
 
               {/* Unit Text */}
               <text x={CX} y={CY + 28} textAnchor="middle" fill="#94a3b8"
-                fontSize="9" fontWeight="600"
+                fontSize="8" fontWeight="600"
               >
                 Bar
               </text>
@@ -139,20 +139,20 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
 
           {/* Status Pill */}
           <div style={{
-            marginTop: 4,
-            padding: '3px 10px',
+            marginTop: 2,
+            padding: '2px 8px',
             borderRadius: 999,
             backgroundColor: `${pressColor}20`,
             border: `1px solid ${pressColor}40`,
             color: pressColor,
-            fontSize: 9,
+            fontSize: 8,
             fontWeight: 700,
             letterSpacing: '0.05em',
             display: 'flex',
             alignItems: 'center',
             gap: 5
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: pressColor, boxShadow: `0 0 6px ${pressColor}` }} />
+            <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: pressColor, boxShadow: `0 0 6px ${pressColor}` }} />
             {pressure < 2 ? 'BAHAYA' : pressure < 4 ? 'WASPADA' : 'NORMAL'}
           </div>
         </div>

@@ -44,8 +44,8 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
 
   return (
     <div className="card" style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
           {title} ({activeMetric.label})
         </div>
         
@@ -55,7 +55,7 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
             onClick={() => setIsOpen(!isOpen)}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              fontSize: 10, fontWeight: 600, padding: '6px 14px', borderRadius: 8,
+              fontSize: 10, fontWeight: 600, padding: '5px 10px', borderRadius: 8,
               background: `${activeMetric.color}15`,
               color: activeMetric.color,
               border: `1px solid ${activeMetric.color}50`,
@@ -111,7 +111,7 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={120}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id={`colorMetric-${activeMetric.id}`} x1="0" y1="0" x2="0" y2="1">
