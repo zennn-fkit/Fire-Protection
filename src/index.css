@@ -526,3 +526,117 @@ body {
   min-height: 100vh;
   padding-top: 64px;
 }
+
+/* History page responsive table */
+.history-content,
+.history-table-card,
+.history-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.history-toolbar select,
+.history-toolbar input {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.history-actions {
+  flex: 0 0 auto;
+}
+
+.history-table-scroll {
+  overflow-x: hidden !important;
+}
+
+.history-table {
+  table-layout: fixed;
+  min-width: 0;
+}
+
+.history-table th,
+.history-table td {
+  padding: 9px clamp(5px, 0.8vw, 14px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  vertical-align: middle;
+}
+
+.history-table th {
+  font-size: clamp(8px, 0.72vw, 11px);
+  letter-spacing: 0;
+}
+
+.history-table td {
+  font-size: clamp(9px, 0.78vw, 12px);
+}
+
+.history-node-badge,
+.history-status-badge {
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.history-node-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.history-clickable-row {
+  cursor: pointer;
+}
+
+.history-clickable-row:hover td {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+@media (max-width: 1100px) {
+  .history-content {
+    padding: 16px 18px !important;
+    gap: 12px !important;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 8px 5px;
+  }
+
+  .history-actions {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .history-toolbar select,
+  .history-toolbar input,
+  .history-toolbar .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .history-actions {
+    width: 100%;
+  }
+
+  .history-actions .btn {
+    justify-content: center;
+  }
+
+  .history-table-scroll {
+    overflow-x: auto !important;
+  }
+
+  .history-table {
+    min-width: 720px;
+  }
+}

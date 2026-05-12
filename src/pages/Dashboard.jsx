@@ -4,7 +4,6 @@ import { useSensor } from '../context/SensorContext';
 import GaugeCard from '../components/dashboard/GaugeCard';
 import EnergyChart      from '../components/dashboard/EnergyChart';
 import SensorStatusCard from '../components/dashboard/SensorStatusCard';
-import HydrantPanel     from '../components/dashboard/HydrantPanel';
 import WaterTankPanel   from '../components/dashboard/WaterTankPanel';
 import EnvPanel         from '../components/dashboard/EnvPanel';
 import Header           from '../components/layout/Header';
@@ -40,8 +39,8 @@ export default function Dashboard() {
       <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
 
-        {/* ── Row 1: Power Gauges + Hydrant ───────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        {/* ── Row 1: Power Gauges ───────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {node1 && (
             <>
               <GaugeCard
@@ -60,13 +59,6 @@ export default function Dashboard() {
                 zones={ZONE_FREQUENCY}
               />
             </>
-          )}
-          {node4 && (
-            <HydrantPanel
-              pressure={node4.pressure}
-              valve_status={node4.valve_status}
-              maxPressure={12}
-            />
           )}
         </div>
 

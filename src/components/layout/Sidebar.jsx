@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, History, Sliders, Flame, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, History, Sliders, Flame, Bell, ChevronLeft, ChevronRight, Droplets } from 'lucide-react';
 import { useSensor } from '../../context/SensorContext';
 
 const NAV = [
   { to: '/',        icon: LayoutDashboard, label: 'Dashboard'    },
+  { to: '/gas-hydrant', icon: Droplets, label: 'Gas & Hydrant' },
   { to: '/history', icon: History,         label: 'Riwayat Data' },
   { to: '/control', icon: Sliders,         label: 'Kontrol'      },
 ];

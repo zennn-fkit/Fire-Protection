@@ -10,6 +10,8 @@ export const getLatest  = ()       => api.get('/api/sensor/latest');
 // ── History ───────────────────────────────────────────────────
 export const getHistory = (params) => api.get('/api/history', { params });
 export const getExport  = (params) => api.get('/api/history/export', { params });
+export const getHistoryDates = (params) => api.get('/api/history/dates', { params });
+export const getHistoryDateNodes = (date, params) => api.get(`/api/history/dates/${date}/nodes`, { params });
 
 // ── Alerts ────────────────────────────────────────────────────
 export const getAlerts    = (params) => api.get('/api/alerts', { params });

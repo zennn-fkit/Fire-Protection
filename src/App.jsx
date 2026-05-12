@@ -7,6 +7,7 @@ import { useSocket } from './hooks/useSocket';
 import Sidebar   from './components/layout/Sidebar';
 import Header    from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
+import GasHydrant from './pages/GasHydrant';
 import History   from './pages/History';
 import Control   from './pages/Control';
 
@@ -50,6 +51,7 @@ function InnerApp() {
       <main className={`main-content ${!isSidebarOpen ? 'collapsed' : ''}`}>
         <Routes>
           <Route path="/"        element={<Dashboard />} />
+          <Route path="/gas-hydrant" element={<GasHydrant />} />
           <Route path="/history" element={<History   />} />
           <Route path="/control" element={<Control   />} />
         </Routes>

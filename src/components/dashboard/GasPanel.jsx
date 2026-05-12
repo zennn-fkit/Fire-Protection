@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Droplets } from 'lucide-react';
+import { Wind } from 'lucide-react'; // Using Wind icon for gas, or Cloud
 
 const CX = 75, CY = 75;
 const START = 140, SWEEP = 260;
@@ -22,10 +22,23 @@ const VALVE_STATUS = {
   CLOSED: { color: '#f87171', label: 'TERTUTUP', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.3)' },
 };
 
-export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', maxPressure = 12 }) {
+export default function GasPanel({ 
+  title = "Smart Gas Monitoring", 
+  pressure = 0, 
+  valve_status = 'CLOSED', 
+  maxPressure = 400,
+  icon: Icon = Wind,
+  iconColor = "#10b981", // Emerald
+  valveLabel = "Status Katup"
+}) {
   const vs  = VALVE_STATUS[valve_status] || VALVE_STATUS.CLOSED;
-  const pct = Math.max(0, Math.min(1, pressure / maxPressure));
-  const pressColor = pressure < 2 ? '#f87171' : pressure < 4 ? '#f59e0b' : '#10b981';
+  // For negative values or high pressure, we need a scale. The mock data in image is -302 Bar. Let's just map it generically.
+  // We'll assume the pressure is absolute value for the gauge filling, but displayed as is.
+  const absPressure = Math.abs(pressure);
+  const pct = Math.max(0, Math.min(1, absPressure / maxPressure));
+  
+  // Color scale for gas: green -> orange -> red based on pct
+  const pressColor = pct > 0.8 ? '#f87171' : pct > 0.5 ? '#f59e0b' : '#10b981';
 
   const valueEndDeg = START + pct * SWEEP;
   const [dotX, dotY] = ptc(CX, CY, 54, valueEndDeg);
@@ -46,19 +59,19 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 150 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px', marginBottom: 8 }}>
-        🚒 Smart Hydrant Monitoring
+        {title}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flex: 1, paddingBottom: 12 }}>
 
-        {/* Left: Hydrant Icon + Valve */}
+        {/* Left: Icon + Valve */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)',
+            background: `${iconColor}1a`, border: `1px solid ${iconColor}4d`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Droplets size={22} color="#3b82f6" style={{ filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.6))' }} />
+            <Icon size={22} color={iconColor} style={{ filter: `drop-shadow(0 0 6px ${iconColor}99)` }} />
           </div>
           <div style={{
             padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 800,
@@ -68,24 +81,24 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
             {vs.label}
           </div>
           <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Status Katup
+            {valveLabel}
           </div>
         </div>
 
         {/* Right: Speedometer Gauge */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ fontSize: 10, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, fontWeight: 700 }}>
-            Tekanan Hydrant
+            Tekanan Gas
           </div>
           
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
             <svg width="250" height="250" viewBox="0 10 150 110" style={{ overflow: 'visible' }}>
               <defs>
-                <filter id="hy-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <filter id="gas-glow" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
                   <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                 </filter>
-                <linearGradient id="hy-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient id="gas-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor={pressColor} stopOpacity="0.6" />
                   <stop offset="100%" stopColor={pressColor} stopOpacity="1" />
                 </linearGradient>
@@ -106,8 +119,8 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
               {/* Active Value Track */}
               {pct > 0.01 && (
                 <path d={arcD(54, START, valueEndDeg)} fill="none"
-                  stroke="url(#hy-grad)" strokeWidth="4" strokeLinecap="round"
-                  filter="url(#hy-glow)"
+                  stroke="url(#gas-grad)" strokeWidth="4" strokeLinecap="round"
+                  filter="url(#gas-glow)"
                   style={{ transition: 'd 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                 />
               )}
@@ -115,7 +128,7 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
               {/* Value Dot (Thumb) */}
               {pct > 0.01 && (
                 <circle cx={dotX} cy={dotY} r={3.5} fill="#ffffff"
-                  filter="url(#hy-glow)"
+                  filter="url(#gas-glow)"
                   style={{ transition: 'cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                 />
               )}
@@ -125,7 +138,7 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
                 fontSize="18" fontWeight="800" fontFamily="'Inter', sans-serif"
                 style={{ textShadow: `0 0 10px ${pressColor}60` }}
               >
-                {pressure.toFixed(1)}
+                {pressure}
               </text>
 
               {/* Unit Text */}
@@ -153,7 +166,7 @@ export default function HydrantPanel({ pressure = 0, valve_status = 'CLOSED', ma
             gap: 5
           }}>
             <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: pressColor, boxShadow: `0 0 6px ${pressColor}` }} />
-            {pressure < 2 ? 'BAHAYA' : pressure < 4 ? 'WASPADA' : 'NORMAL'}
+            {pct > 0.8 ? 'BAHAYA' : pct > 0.5 ? 'WASPADA' : 'NORMAL'}
           </div>
         </div>
 
