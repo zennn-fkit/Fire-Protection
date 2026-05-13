@@ -18,7 +18,7 @@ function arcD(r, startDeg, endDeg) {
 }
 
 export default function GaugeCard({
-  label, value, min = 0, max = 100, unit,
+  label, value, displayValue, min = 0, max = 100, unit,
   threshKey, decimals = 1
 }) {
   const status = threshKey ? getStatus(threshKey, value) : 'normal';
@@ -94,10 +94,10 @@ export default function GaugeCard({
 
           {/* Value Text */}
           <text x={CX} y={CY + 15} textAnchor="middle" fill="#ffffff"
-            fontSize="24" fontWeight="800" fontFamily="'Inter', sans-serif"
+            fontSize={displayValue && typeof displayValue === 'string' && displayValue.length > 8 ? "18" : "24"} fontWeight="800" fontFamily="'Inter', sans-serif"
             style={{ textShadow: `0 0 12px ${sc.stroke}60` }}
           >
-            {typeof value === 'number' ? value.toFixed(decimals) : value}
+            {displayValue !== undefined ? displayValue : (typeof value === 'number' ? value.toFixed(decimals) : value)}
           </text>
 
           {/* Unit Text */}

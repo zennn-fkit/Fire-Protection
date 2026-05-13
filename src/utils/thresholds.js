@@ -1,13 +1,18 @@
 // Sensor value thresholds for color/status determination
 export const THRESHOLDS = {
-  voltage:     { min: 200, max: 240, warn_lo: 210, warn_hi: 230 },
-  current_amp: { min: 0,   max: 180, warn_hi: 150, danger_hi: 165 },
-  frequency:   { min: 45,  max: 55,  warn_lo: 49,  warn_hi: 51 },
-  power_kw:    { min: 0,   max: 3,   warn_hi: 2.5 },
-  temperature: { min: 0,   max: 80,  warn_hi: 40,  danger_hi: 60 },
-  humidity:    { min: 0,   max: 100, warn_lo: 20,  warn_hi: 80 },
-  pressure:    { min: 0,   max: 12,  warn_lo: 4,   danger_lo: 2 },
-  water_level: { min: 0,   max: 100, warn_lo: 20,  danger_lo: 10 },
+  voltage:         { min: 200, max: 240, warn_lo: 210, warn_hi: 230 },
+  current_amp:     { min: 0,   max: 180, warn_hi: 150, danger_hi: 165 },
+  frequency:       { min: 45,  max: 55,  warn_lo: 49,  warn_hi: 51 },
+  power_kw:        { min: 0,   max: 3,   warn_hi: 2.5 },
+  energy_kwh:      { min: 0,   max: 10000 },
+  temperature:     { min: 0,   max: 80,  warn_hi: 40,  danger_hi: 60 },
+  temperature_sht: { min: 0,   max: 80,  warn_hi: 40,  danger_hi: 60 },
+  thermal_temp:    { min: 0,   max: 80,  warn_hi: 40,  danger_hi: 60 },
+  humidity:        { min: 0,   max: 100, warn_lo: 20,  warn_hi: 80 },
+  pressure:        { min: 0,   max: 12,  warn_lo: 4,   danger_lo: 2 },
+  water_level:     { min: 0,   max: 100, warn_lo: 20,  danger_lo: 10 },
+  co2_ppm:         { min: 0,   max: 2,   warn_hi: 1,   danger_hi: 1.5 },
+  uv_detected:     { min: 0,   max: 1 },
 };
 
 /**

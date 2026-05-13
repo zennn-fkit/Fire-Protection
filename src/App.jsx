@@ -7,6 +7,7 @@ import { useSocket } from './hooks/useSocket';
 import Sidebar   from './components/layout/Sidebar';
 import Header    from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
+import KontrolSensor from './pages/KontrolSensor';
 import GasHydrant from './pages/GasHydrant';
 import History   from './pages/History';
 import Control   from './pages/Control';
@@ -17,43 +18,44 @@ function InnerApp() {
   const { state, mockTick } = useSensor();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // If not connected to backend, run mock data every 3s
+  // Mock ticker: selalu jalan tiap 3 detik untuk semua sensor.
+  // Jika sensor real terkoneksi dan mengirim data, field tersebut otomatis
+  // memakai data real (hybrid mode — lihat SensorContext MOCK_TICK).
   useEffect(() => {
-    if (!state.connected) {
-      const interval = setInterval(mockTick, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [state.connected, mockTick]);
+    const interval = setInterval(mockTick, 3000);
+    return () => clearInterval(interval);
+  }, [mockTick]);
 
-  const isWaitingForData = !state.node1 && !state.node2 && !state.node3 && !state.node4 && !state.detectors && state.water_level === null;
+  // Tampilkan loading hanya selama mock belum selesai inisialisasi awal (~6 detik)
+  // atau jika memang belum ada data sama sekali
+  const isWaitingForData = !state.mockInitialized && !state.node1 && !state.node2 && !state.node3 && !state.node4 && !state.detectors && state.water_level === null;
 
-  if (isWaitingForData) {
-    return (
-      <div className="page-gradient" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <Header title="Dashboard Monitoring" />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
-          <div style={{
-             width: 50, height: 50, border: '4px solid #1e293b', borderTopColor: '#3b82f6',
-             borderRadius: '50%', animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ color: '#94a3b8', fontSize: 16, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>
-            Menunggu koneksi data sensor...
-          </p>
-        </div>
-        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+  const loadingElement = (
+    <div className="page-gradient" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header title="Menunggu Koneksi..." />
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
+        <div style={{
+           width: 50, height: 50, border: '4px solid #1e293b', borderTopColor: '#3b82f6',
+           borderRadius: '50%', animation: 'spin 1s linear infinite'
+        }} />
+        <p style={{ color: '#94a3b8', fontSize: 16, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>
+          Menunggu koneksi data sensor...
+        </p>
       </div>
-    );
-  }
+      <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
       <main className={`main-content ${!isSidebarOpen ? 'collapsed' : ''}`}>
         <Routes>
-          <Route path="/"        element={<Dashboard />} />
-          <Route path="/gas-hydrant" element={<GasHydrant />} />
+          <Route path="/"        element={isWaitingForData ? loadingElement : <Dashboard />} />
+          <Route path="/kontrol-sensor" element={isWaitingForData ? loadingElement : <KontrolSensor />} />
+          <Route path="/gas-hydrant" element={isWaitingForData ? loadingElement : <GasHydrant />} />
           <Route path="/history" element={<History   />} />
-          <Route path="/control" element={<Control   />} />
+          <Route path="/control" element={isWaitingForData ? loadingElement : <Control   />} />
         </Routes>
       </main>
     </div>

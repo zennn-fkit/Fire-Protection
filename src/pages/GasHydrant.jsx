@@ -4,81 +4,75 @@ import Header from '../components/layout/Header';
 import GasPanel from '../components/dashboard/GasPanel';
 import HydrantPanel from '../components/dashboard/HydrantPanel';
 import WaterTankPanel from '../components/dashboard/WaterTankPanel';
-import { Flame, Droplets } from 'lucide-react'; // Placeholder icons for schematic
+import PressureSensorCard from '../components/dashboard/PressureSensorCard';
+import UltrasonicSensorCard from '../components/dashboard/UltrasonicSensorCard';
+import { Flame, Droplets, Gauge, Waves } from 'lucide-react';
+
+const TAB_STYLE = (active) => ({
+  flex: 1,
+  padding: '12px 0',
+  background: 'transparent',
+  border: 'none',
+  borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
+  color: active ? '#e2e8f0' : '#64748b',
+  fontSize: 12,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  cursor: 'pointer',
+  transition: 'all 0.3s',
+});
+
+const SUBTAB_STYLE = (active) => ({
+  padding: '7px 16px',
+  background: active ? 'rgba(59,130,246,0.15)' : 'transparent',
+  border: `1px solid ${active ? 'rgba(59,130,246,0.4)' : 'rgba(26,53,88,0.6)'}`,
+  borderRadius: 8,
+  color: active ? '#93c5fd' : '#64748b',
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  cursor: 'pointer',
+  transition: 'all 0.25s',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+});
 
 export default function GasHydrant() {
   const { state } = useSensor();
-  const { node4, water_level } = state;
+  const { node4, water_level, water_pressure, water_distance } = state;
   const [activeTab, setActiveTab] = useState('gas');
+  const [hydrantSubTab, setHydrantSubTab] = useState('overview');
 
   return (
     <div className="page-gradient" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header title="Gas & Hydrant Monitoring" />
 
       <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
-        
-        {/* Tab Navigation */}
+
+        {/* Main Tab Navigation */}
         <div style={{ display: 'flex', borderBottom: '1px solid #1a3558' }}>
-          <button
-            onClick={() => setActiveTab('gas')}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'gas' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'gas' ? '#e2e8f0' : '#64748b',
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              cursor: 'pointer',
-              transition: 'all 0.3s',
-            }}
-          >
-            SMART GAS
+          <button onClick={() => setActiveTab('gas')} style={TAB_STYLE(activeTab === 'gas')}>
+            🔥 Smart Gas
           </button>
-          <button
-            onClick={() => setActiveTab('hydrant')}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'hydrant' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'hydrant' ? '#e2e8f0' : '#64748b',
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              cursor: 'pointer',
-              transition: 'all 0.3s',
-            }}
-          >
-            HYDRANT
+          <button onClick={() => setActiveTab('hydrant')} style={TAB_STYLE(activeTab === 'hydrant')}>
+            🚒 Hydrant
           </button>
         </div>
 
-        {/* Tab Content */}
+        {/* ── GAS TAB ── */}
         {activeTab === 'gas' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-            {/* INERT GAS
-            <GasPanel 
-              title="SMART INERT GAS MONITORING"
-              pressure={-302}
-              maxPressure={400}
-              valve_status="OPEN"
-              valveLabel="Status Katup"
-              iconColor="#f59e0b" // Orange/amber
-            /> */}
             {/* CO2 PRESSURE */}
-            <GasPanel 
+            <GasPanel
               title="SMART CO2 PRESSURE MONITORING"
               pressure={-369}
               maxPressure={400}
-              valve_status="OPEN" // "NORMAL" mock
+              valve_status="OPEN"
               valveLabel="Status Kebocoran"
-              iconColor="#ef4444" // Red
+              iconColor="#ef4444"
             />
             {/* SCHEMATIC */}
             <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
@@ -86,67 +80,246 @@ export default function GasHydrant() {
                 FIELD SCHEMATIC / LIVE
               </div>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                 <div style={{
-                    width: '100%', height: 120, 
-                    background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 12px 12px 12px',
-                    position: 'relative'
-                 }}>
-                    <Flame size={48} color="#10b981" />
-                    <div style={{
-                      position: 'absolute', bottom: 10, right: 10,
-                      padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
-                      fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
-                    }}>
-                      GAS-UNIT
-                    </div>
-                 </div>
+                <div style={{
+                  width: '100%', height: 120,
+                  background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 12px 12px 12px', position: 'relative'
+                }}>
+                  <Flame size={48} color="#10b981" />
+                  <div style={{
+                    position: 'absolute', bottom: 10, right: 10,
+                    padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
+                    fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
+                  }}>
+                    GAS-UNIT
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* ── HYDRANT TAB ── */}
         {activeTab === 'hydrant' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-            {/* HYDRANT PRESSURE */}
-            {node4 ? (
-              <HydrantPanel 
-                pressure={node4.pressure}
-                valve_status={node4.valve_status}
-                maxPressure={12}
-              />
-            ) : (
-              <HydrantPanel pressure={0} valve_status="CLOSED" maxPressure={12} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Sub-tab Navigation */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setHydrantSubTab('overview')} style={SUBTAB_STYLE(hydrantSubTab === 'overview')}>
+                <Droplets size={13} />
+                Overview
+              </button>
+              <button onClick={() => setHydrantSubTab('pressure')} style={SUBTAB_STYLE(hydrantSubTab === 'pressure')}>
+                <Gauge size={13} />
+                Pressure Sensor
+              </button>
+              <button onClick={() => setHydrantSubTab('ultrasonic')} style={SUBTAB_STYLE(hydrantSubTab === 'ultrasonic')}>
+                <Waves size={13} />
+                Ultrasonik
+              </button>
+            </div>
+
+            {/* ── Overview sub-tab ── */}
+            {hydrantSubTab === 'overview' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+                {/* Hydrant Pressure Gauge */}
+                {node4 ? (
+                  <HydrantPanel
+                    pressure={node4.pressure}
+                    valve_status={node4.valve_status}
+                    maxPressure={12}
+                  />
+                ) : (
+                  <HydrantPanel pressure={0} valve_status="CLOSED" maxPressure={12} />
+                )}
+
+                {/* Water Tank Level */}
+                <WaterTankPanel level={water_level !== null ? water_level : 0} />
+
+                {/* Quick summary cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {/* Pressure summary */}
+                  <div className="card" style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <Gauge size={14} color="#3b82f6" />
+                      <span style={{ fontSize: 9, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Water Pressure
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 900, color: '#3b82f6' }}>
+                      {water_pressure !== null ? water_pressure.toFixed(2) : '—'}
+                    </div>
+                    <div style={{ fontSize: 9, color: '#475569', fontWeight: 600, marginTop: 2 }}>Bar</div>
+                    <div style={{ fontSize: 8, color: '#64748b', marginTop: 4 }}>
+                      Sensor: Pressure Transducer
+                    </div>
+                  </div>
+
+                  {/* Ultrasonic summary */}
+                  <div className="card" style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <Waves size={14} color="#38bdf8" />
+                      <span style={{ fontSize: 9, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Ketinggian Air
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 900, color: '#38bdf8' }}>
+                      {water_distance !== null
+                        ? (200 - water_distance).toFixed(1)
+                        : '—'}
+                    </div>
+                    <div style={{ fontSize: 9, color: '#475569', fontWeight: 600, marginTop: 2 }}>cm</div>
+                    <div style={{ fontSize: 8, color: '#64748b', marginTop: 4 }}>
+                      Sensor: HC-SR04 Ultrasonik
+                    </div>
+                  </div>
+                </div>
+
+                {/* Schematic */}
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px' }}>
+                    FIELD SCHEMATIC / LIVE
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{
+                      width: '100%', height: 120,
+                      background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 12px 12px 12px', position: 'relative'
+                    }}>
+                      <Droplets size={48} color="#10b981" />
+                      <div style={{
+                        position: 'absolute', bottom: 10, right: 10,
+                        padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
+                        fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
+                      }}>
+                        HYD-01 / ACTIVE
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-            {/* WATER TANK */}
-            <WaterTankPanel level={water_level !== null ? water_level : 0} />
-
-            {/* SCHEMATIC */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px' }}>
-                FIELD SCHEMATIC / LIVE
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                 <div style={{
-                    width: '100%', height: 120, 
-                    background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 12px 12px 12px',
-                    position: 'relative'
-                 }}>
-                    <Droplets size={48} color="#10b981" />
-                    <div style={{
-                      position: 'absolute', bottom: 10, right: 10,
-                      padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
-                      fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
-                    }}>
-                      HYD-01 / ACTIVE
+            {/* ── Pressure Sensor sub-tab ── */}
+            {hydrantSubTab === 'pressure' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+                {/* Info banner */}
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <Gauge size={16} color="#3b82f6" style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#93c5fd', marginBottom: 2 }}>
+                      Sensor Tekanan Air — Pressure Transducer
                     </div>
-                 </div>
+                    <div style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
+                      Mendeteksi tekanan air dalam sistem pipa hydrant dalam satuan <strong style={{ color: '#64748b' }}>Bar</strong>.
+                      Range normal: <strong style={{ color: '#10b981' }}>4 – 8.5 Bar</strong>.
+                      Batas aman: <strong style={{ color: '#f59e0b' }}>2 – 4 Bar (waspada)</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main pressure gauge */}
+                <PressureSensorCard
+                  pressure={water_pressure !== null ? water_pressure : 0}
+                  maxPressure={10}
+                  title="Tekanan Air Hydrant"
+                />
+
+                {/* Additional hydrant pressure gauge (node4) */}
+                <div className="card" style={{ padding: '16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                    📊 Perbandingan Tekanan
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      {
+                        label: 'Pressure Transducer (Tangki)',
+                        value: water_pressure !== null ? water_pressure : 0,
+                        max: 10,
+                        color: '#3b82f6',
+                        unit: 'Bar',
+                      },
+                      {
+                        label: 'Hydrant Node (Jaringan Pipa)',
+                        value: node4?.pressure ?? 0,
+                        max: 12,
+                        color: '#10b981',
+                        unit: 'Bar',
+                      },
+                    ].map(item => {
+                      const pct = Math.max(0, Math.min(1, item.value / item.max));
+                      return (
+                        <div key={item.label}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                            <span style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600 }}>{item.label}</span>
+                            <span style={{ fontSize: 11, color: item.color, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                              {item.value.toFixed(2)} {item.unit}
+                            </span>
+                          </div>
+                          <div style={{ height: 8, background: '#0d1f38', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%', borderRadius: 99,
+                              width: `${pct * 100}%`,
+                              background: `linear-gradient(90deg, #1d4ed8, ${item.color})`,
+                              transition: 'width 0.8s ease',
+                              boxShadow: `0 0 8px ${item.color}60`,
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                            <span style={{ fontSize: 7, color: '#334155' }}>0 {item.unit}</span>
+                            <span style={{ fontSize: 7, color: '#334155' }}>{item.max} {item.unit}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ── Ultrasonic sub-tab ── */}
+            {hydrantSubTab === 'ultrasonic' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+                {/* Info banner */}
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: 'rgba(56,189,248,0.08)',
+                  border: '1px solid rgba(56,189,248,0.25)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <Waves size={16} color="#38bdf8" style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#7dd3fc', marginBottom: 2 }}>
+                      Sensor Ultrasonik — HC-SR04
+                    </div>
+                    <div style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
+                      Mengukur ketinggian air di dalam tangki hydrant menggunakan pantulan gelombang ultrasonik.
+                      Sensor dipasang di <strong style={{ color: '#64748b' }}>atas tangki</strong> dan mengukur jarak ke permukaan air.
+                      Ketinggian air = Max Tangki − Jarak Terukur.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main ultrasonic card */}
+                <UltrasonicSensorCard
+                  distanceCm={water_distance !== null ? water_distance : 100}
+                  maxDistanceCm={200}
+                  title="Level Air Tangki Hydrant"
+                />
+
+                {/* Also show simple water level percentage from WaterTank sensor */}
+                <WaterTankPanel level={water_level !== null ? water_level : 0} />
+              </div>
+            )}
           </div>
         )}
       </div>

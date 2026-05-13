@@ -12,7 +12,7 @@ import Header           from '../components/layout/Header';
 
 export default function Dashboard() {
   const { state } = useSensor();
-  const { node1, node2, node3, node4, detectors, water_level, energyHistory } = state;
+  const { panelData, node3, detectors, water_level, energyHistory } = state;
 
   const anyDanger  = detectors ? Object.values(detectors).some(v => v === 'DANGER') : false;
   const anyWarning = detectors ? Object.values(detectors).some(v => v === 'WARNING') : false;
@@ -40,23 +40,28 @@ export default function Dashboard() {
 
 
         {/* ── Row 1: Power Gauges ───────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          {node1 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {panelData && (
             <>
               <GaugeCard
-                label="Tegangan" value={node1.voltage} min={180} max={260}
+                label="Tegangan" value={panelData.voltage} min={180} max={260}
                 unit="Volt AC" threshKey="voltage" decimals={1}
                 zones={ZONE_VOLTAGE}
               />
               <GaugeCard
-                label="Arus" value={node1.current_amp} min={0} max={180}
+                label="Arus" value={panelData.current_amp} min={0} max={180}
                 unit="Ampere" threshKey="current_amp" decimals={1}
                 zones={ZONE_DEFAULT}
               />
               <GaugeCard
-                label="Frekuensi" value={node1.frequency} min={45} max={55}
-                unit="Hz" threshKey="frequency" decimals={2}
-                zones={ZONE_FREQUENCY}
+                label="Watt" value={panelData.power_kw * 1000} min={0} max={3000}
+                unit="Watt" threshKey="power_kw" decimals={0}
+                zones={ZONE_DEFAULT}
+              />
+              <GaugeCard
+                label="Energy" value={panelData.energy_kwh} min={0} max={10000}
+                unit="kWh" threshKey="energy_kwh" decimals={2}
+                zones={ZONE_DEFAULT}
               />
             </>
           )}
@@ -72,13 +77,12 @@ export default function Dashboard() {
 
         {/* ── Row 3: Env Panels + Water + Detectors ───────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-          {(node2 || node3) && (
+          {node3 && (
             <div style={{ gridColumn: 'span 2', display: 'flex' }}>
               <EnvPanel 
                 title="Monitoring Sensor" 
                 nodes={[
-                  ...(node2 ? [{ label: 'Panel Environment (Node 2)', data: node2 }] : []),
-                  ...(node3 ? [{ label: 'Lingkungan (Node 3)', data: node3 }] : [])
+                  { label: 'Lingkungan (Node 3)', data: node3 }
                 ]}
                 style={{ flex: 1 }}
               />
