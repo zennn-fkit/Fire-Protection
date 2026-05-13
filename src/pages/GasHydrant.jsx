@@ -62,7 +62,7 @@ export default function GasHydrant() {
         {/* Tab Content */}
         {activeTab === 'gas' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-            {/* INERT GAS */}
+            {/* INERT GAS
             <GasPanel 
               title="SMART INERT GAS MONITORING"
               pressure={-302}
@@ -70,7 +70,7 @@ export default function GasHydrant() {
               valve_status="OPEN"
               valveLabel="Status Katup"
               iconColor="#f59e0b" // Orange/amber
-            />
+            /> */}
             {/* CO2 PRESSURE */}
             <GasPanel 
               title="SMART CO2 PRESSURE MONITORING"
