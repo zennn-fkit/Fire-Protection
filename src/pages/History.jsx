@@ -6,7 +6,7 @@ import { exportToPDF } from '../utils/exportPDF';
 import { exportToCSV } from '../utils/exportCSV';
 import Header from '../components/layout/Header';
 
-const NODE_LABELS = { 1: 'Power Sensor', 2: 'Humidity #1', 3: 'Humidity #2', 4: 'Pressure' };
+const NODE_LABELS = { 1: 'Master Node (ESP32)', 2: 'Node 2 (Inactive)', 3: 'Node 3 (Inactive)', 4: 'Node 4 (Inactive)' };
 const STATUS_COLOR = { NORMAL: '#10b981', WARNING: '#f59e0b', DANGER: '#ef4444' };
 const LIMIT = 50;
 
@@ -226,53 +226,49 @@ export default function History() {
   };
 
   const dateColumns = [
-    { label: 'Tanggal', w: '11%', render: r => formatDateLabel(r.date) },
-    { label: 'Node', w: '7%', render: r => r.node_count },
-    { label: 'Record', w: '8%', render: r => r.total_records },
-    { label: 'Data Awal', w: '10%', render: r => formatDateTime(r.first_timestamp) },
-    { label: 'Data Akhir', w: '10%', render: r => formatDateTime(r.last_timestamp) },
-    { label: 'Tegangan (V)', w: '8%', render: r => val(r.voltage) },
-    { label: 'Arus (A)', w: '7%', render: r => val(r.current_amp) },
-    { label: 'Frekuensi (Hz)', w: '8%', render: r => val(r.frequency, 2) },
-    { label: 'Daya (kW)', w: '7%', render: r => val(r.power_kw, 2) },
-    { label: 'Suhu (C)', w: '7%', render: r => val(r.temperature) },
-    { label: 'Kelembaban (%)', w: '8%', render: r => val(r.humidity) },
-    { label: 'Tekanan (Bar)', w: '7%', render: r => val(r.pressure, 2) },
-    { label: 'Air (%)', w: '6%', render: r => val(r.water_level) },
+    { label: 'Tanggal', render: r => formatDateLabel(r.date) },
+    { label: 'Record', render: r => r.total_records },
+    { label: 'Tegangan (V)', render: r => val(r.voltage) },
+    { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
+    { label: 'Kelembaban (%)', render: r => val(r.humidity) },
+    { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
+    { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
+    { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+    { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
+    { label: 'Level Air (%)', render: r => val(r.water_level) },
   ];
 
   const nodeColumns = [
-    { label: 'Node', w: '16%', render: r => <span className="history-node-badge">Node {r.node_id} - {NODE_LABELS[r.node_id]}</span> },
-    { label: 'Record', w: '8%', render: r => r.total_records },
-    { label: 'Data Awal', w: '12%', render: r => formatDateTime(r.first_timestamp) },
-    { label: 'Data Akhir', w: '12%', render: r => formatDateTime(r.last_timestamp) },
-    { label: 'Tegangan (V)', w: '8%', render: r => val(r.voltage) },
-    { label: 'Arus (A)', w: '7%', render: r => val(r.current_amp) },
-    { label: 'Frekuensi (Hz)', w: '8%', render: r => val(r.frequency, 2) },
-    { label: 'Daya (kW)', w: '7%', render: r => val(r.power_kw, 2) },
-    { label: 'Suhu (C)', w: '7%', render: r => val(r.temperature) },
-    { label: 'Kelembaban (%)', w: '8%', render: r => val(r.humidity) },
-    { label: 'Tekanan (Bar)', w: '7%', render: r => val(r.pressure, 2) },
-    { label: 'Katup', w: '6%', render: r => textVal(r.valve_status) },
-    { label: 'Asap', w: '5%', render: r => <StatusBadge v={r.smoke_status} /> },
-    { label: 'Api', w: '5%', render: r => <StatusBadge v={r.flame_status} /> },
-    { label: 'Air (%)', w: '6%', render: r => val(r.water_level) },
+    { label: 'Node', render: r => <span className="history-node-badge">Node {r.node_id}</span> },
+    { label: 'Record', render: r => r.total_records },
+    { label: 'Tegangan (V)', render: r => val(r.voltage) },
+    { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
+    { label: 'Kelembaban (%)', render: r => val(r.humidity) },
+    { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
+    { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
+    { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+    { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
+    { label: 'Level Air (%)', render: r => val(r.water_level) },
+    { label: 'Asap', render: r => <StatusBadge v={r.smoke_status} /> },
+    { label: 'Api', render: r => <StatusBadge v={r.flame_status} /> },
   ];
 
   const detailColumns = [
-    { label: 'Timestamp', w: '12%', render: r => r.timestamp ? format(new Date(r.timestamp), 'dd/MM/yy HH:mm:ss') : '-' },
-    { label: 'Node', w: '13%', render: r => <span className="history-node-badge">Node {r.node_id} - {NODE_LABELS[r.node_id]}</span> },
-    { label: 'Tegangan (V)', w: '7.5%', render: r => val(r.voltage) },
-    { label: 'Arus (A)', w: '7%', render: r => val(r.current_amp) },
-    { label: 'Frekuensi (Hz)', w: '8%', render: r => val(r.frequency, 2) },
-    { label: 'Daya (kW)', w: '7%', render: r => val(r.power_kw, 2) },
-    { label: 'Suhu (C)', w: '7%', render: r => val(r.temperature) },
-    { label: 'Kelembaban (%)', w: '9%', render: r => val(r.humidity) },
-    { label: 'Tekanan (Bar)', w: '8.5%', render: r => val(r.pressure, 2) },
-    { label: 'Katup', w: '6%', render: r => textVal(r.valve_status) },
-    { label: 'Asap', w: '5%', render: r => <StatusBadge v={r.smoke_status} /> },
-    { label: 'Api', w: '5%', render: r => <StatusBadge v={r.flame_status} /> },
-    { label: 'Air (%)', w: '5%', render: r => val(r.water_level) },
+    { label: 'Waktu', render: r => r.timestamp ? format(new Date(r.timestamp), 'HH:mm:ss') : '-' },
+    { label: 'Node', render: r => <span className="history-node-badge">N-{r.node_id}</span> },
+    { label: 'Tegangan (V)', render: r => val(r.voltage) },
+    { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
+    { label: 'Kelembaban (%)', render: r => val(r.humidity) },
+    { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
+    { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
+    { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+    { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
+    { label: 'Level Air (%)', render: r => val(r.water_level) },
+    { label: 'Asap', render: r => <StatusBadge v={r.smoke_status} /> },
+    { label: 'Api', render: r => <StatusBadge v={r.flame_status} /> },
   ];
 
   const currentColumns = view === 'dates' ? dateColumns : view === 'nodes' ? nodeColumns : detailColumns;
@@ -281,24 +277,21 @@ export default function History() {
 
   const summaryExportColumns = [
     { header: 'Tanggal', dataKey: 'date', accessor: r => formatDateLabel(r.date) },
-    { header: 'Node', dataKey: 'node_count', accessor: r => r.node_count ?? '' },
     { header: 'Record', dataKey: 'total_records', accessor: r => r.total_records ?? '' },
-    { header: 'Data Awal', dataKey: 'first_timestamp', accessor: r => formatDateTime(r.first_timestamp) },
-    { header: 'Data Akhir', dataKey: 'last_timestamp', accessor: r => formatDateTime(r.last_timestamp) },
     { header: 'Tegangan (V)', dataKey: 'voltage', accessor: r => r.voltage != null ? Number(r.voltage).toFixed(1) : '' },
-    { header: 'Arus (A)', dataKey: 'current_amp', accessor: r => r.current_amp != null ? Number(r.current_amp).toFixed(1) : '' },
-    { header: 'Frekuensi (Hz)', dataKey: 'frequency', accessor: r => r.frequency != null ? Number(r.frequency).toFixed(2) : '' },
     { header: 'Daya (kW)', dataKey: 'power_kw', accessor: r => r.power_kw != null ? Number(r.power_kw).toFixed(2) : '' },
-    { header: 'Suhu (C)', dataKey: 'temperature', accessor: r => r.temperature != null ? Number(r.temperature).toFixed(1) : '' },
+    { header: 'Sensor Suhu (C)', dataKey: 'temperature', accessor: r => r.temperature != null ? Number(r.temperature).toFixed(1) : '' },
     { header: 'Kelembaban (%)', dataKey: 'humidity', accessor: r => r.humidity != null ? Number(r.humidity).toFixed(1) : '' },
-    { header: 'Tekanan (Bar)', dataKey: 'pressure', accessor: r => r.pressure != null ? Number(r.pressure).toFixed(2) : '' },
-    { header: 'Air (%)', dataKey: 'water_level', accessor: r => r.water_level != null ? Number(r.water_level).toFixed(1) : '' },
+    { header: 'Sensor Karbon (PPM)', dataKey: 'co2_ppm', accessor: r => r.co2_ppm != null ? Number(r.co2_ppm).toFixed(2) : '' },
+    { header: 'Sensor Gas (Bar)', dataKey: 'pressure', accessor: r => r.pressure != null ? Number(r.pressure).toFixed(2) : '' },
+    { header: 'Thermal (C)', dataKey: 'thermal_temp', accessor: r => r.thermal_temp != null ? Number(r.thermal_temp).toFixed(1) : '' },
+    { header: 'Tekanan Air (Bar)', dataKey: 'water_pressure', accessor: r => r.water_pressure != null ? Number(r.water_pressure).toFixed(2) : '' },
+    { header: 'Level Air (%)', dataKey: 'water_level', accessor: r => r.water_level != null ? Number(r.water_level).toFixed(1) : '' },
   ];
 
   const nodeExportColumns = [
-    { header: 'Node', dataKey: 'node_id', accessor: r => `Node ${r.node_id} - ${NODE_LABELS[r.node_id]}` },
-    ...summaryExportColumns.slice(2),
-    { header: 'Katup', dataKey: 'valve_status', accessor: r => r.valve_status || '' },
+    { header: 'Node', dataKey: 'node_id', accessor: r => `Node ${r.node_id}` },
+    ...summaryExportColumns.slice(1),
     { header: 'Asap', dataKey: 'smoke_status', accessor: r => r.smoke_status || '' },
     { header: 'Api', dataKey: 'flame_status', accessor: r => r.flame_status || '' },
   ];

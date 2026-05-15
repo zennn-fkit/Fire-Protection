@@ -25,8 +25,13 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
   humidity        FLOAT    DEFAULT NULL COMMENT 'Percent RH',
 
   -- Node 4: Pressure Sensor (Hydrant)
-  pressure        FLOAT    DEFAULT NULL COMMENT 'Bar',
+  pressure        FLOAT    DEFAULT NULL COMMENT 'Bar (Gas Pressure)',
+  water_pressure  FLOAT    DEFAULT NULL COMMENT 'Bar (Hydrant Pressure)',
   valve_status    ENUM('OPEN','CLOSED') DEFAULT 'CLOSED',
+
+  -- Additional Sensors from Master Node
+  co2_ppm         FLOAT    DEFAULT NULL COMMENT 'PPM',
+  thermal_temp    FLOAT    DEFAULT NULL COMMENT 'Celsius',
 
   -- Fire Detectors (shared, sent by any node or gateway)
   smoke_status    ENUM('NORMAL','WARNING','DANGER') DEFAULT 'NORMAL',

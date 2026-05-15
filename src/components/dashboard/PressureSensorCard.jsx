@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Gauge } from 'lucide-react';
 
 const CX = 80, CY = 80;
-const START = 145, SWEEP = 250;
+const START = 140, SWEEP = 260;
 
 function ptc(cx, cy, r, deg) {
   const rad = (deg * Math.PI) / 180;
@@ -33,7 +33,14 @@ function getPressureStatus(pressure, max) {
   return { label: 'OVERPRESSURE', color: '#ef4444' };
 }
 
-export default function PressureSensorCard({ pressure = 0, maxPressure = 10, title = 'Sensor Tekanan Air' }) {
+export default function PressureSensorCard({ 
+  pressure = 0, 
+  maxPressure = 10, 
+  title = 'Sensor Tekanan Air',
+  subtitle = 'Pressure Transducer • Bar',
+  iconColor = '#3b82f6',
+  icon: Icon = Gauge
+}) {
   const pct = Math.max(0, Math.min(1, pressure / maxPressure));
   const pressColor = getPressureColor(pressure, maxPressure);
   const status = getPressureStatus(pressure, maxPressure);
@@ -41,30 +48,18 @@ export default function PressureSensorCard({ pressure = 0, maxPressure = 10, tit
   const valueEndDeg = START + pct * SWEEP;
   const [dotX, dotY] = ptc(CX, CY, 58, valueEndDeg);
 
-  // Major ticks every 1 bar, minor ticks every 0.5 bar
   const ticks = useMemo(() => {
     const arr = [];
-    const totalTicks = 20;
-    for (let i = 0; i <= totalTicks; i++) {
-      const f = i / totalTicks;
+    for (let i = 0; i <= 30; i++) {
+      const f = i / 30;
       const deg = START + f * SWEEP;
-      const isMajor = i % 2 === 0;
+      const isMajor = i % 5 === 0;
       const [ox, oy] = ptc(CX, CY, 50, deg);
       const [ix, iy] = ptc(CX, CY, isMajor ? 43 : 47, deg);
-      const [lx, ly] = ptc(CX, CY, 37, deg);
-      const labelVal = (f * maxPressure).toFixed(0);
-      arr.push({ ox, oy, ix, iy, lx, ly, isMajor, labelVal });
+      arr.push({ ox, oy, ix, iy, isMajor });
     }
     return arr;
-  }, [maxPressure]);
-
-  // Zone arcs: danger (0-20%), caution (20-50%), normal (50-85%), over (85-100%)
-  const zones = useMemo(() => [
-    { start: 0, end: 0.2,  color: 'rgba(248,113,113,0.35)' },
-    { start: 0.2, end: 0.5, color: 'rgba(245,158,11,0.30)' },
-    { start: 0.5, end: 0.85,color: 'rgba(16,185,129,0.30)' },
-    { start: 0.85, end: 1,  color: 'rgba(239,68,68,0.35)'  },
-  ], []);
+  }, []);
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -76,16 +71,16 @@ export default function PressureSensorCard({ pressure = 0, maxPressure = 10, tit
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: 8,
-          background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
+          background: `${iconColor}1a`, border: `1px solid ${iconColor}4d`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <Gauge size={16} color="#3b82f6" />
+          <Icon size={16} color={iconColor} />
         </div>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {title}
           </div>
-          <div style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>Pressure Transducer • Bar</div>
+          <div style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>{subtitle}</div>
         </div>
         {/* Live badge */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -120,83 +115,48 @@ export default function PressureSensorCard({ pressure = 0, maxPressure = 10, tit
               </linearGradient>
             </defs>
 
-            {/* Outer ring background */}
-            <circle cx={CX} cy={CY} r="70" fill="url(#ps-bg-grad)" stroke="#1a2b4c" strokeWidth="1" />
-
-            {/* Zone arcs (colored bands on background track) */}
-            {zones.map((z, i) => (
-              <path key={i}
-                d={arcD(58, START + z.start * SWEEP, START + z.end * SWEEP)}
-                fill="none" stroke={z.color} strokeWidth="5" strokeLinecap="butt"
-              />
-            ))}
-
             {/* Background Track */}
             <path d={arcD(58, START, START + SWEEP)} fill="none"
-              stroke="#0e1f3a" strokeWidth="6" strokeLinecap="round"
+              stroke="#1a2b4c" strokeWidth="4" strokeLinecap="round"
             />
-
-            {/* Re-draw zones above track (thinner) */}
-            {zones.map((z, i) => (
-              <path key={`z2-${i}`}
-                d={arcD(58, START + z.start * SWEEP, START + z.end * SWEEP)}
-                fill="none" stroke={z.color} strokeWidth="4" strokeLinecap="butt"
-              />
-            ))}
 
             {/* Ticks */}
             {ticks.map((t, i) => (
-              <g key={i}>
-                <line x1={t.ox} y1={t.oy} x2={t.ix} y2={t.iy}
-                  stroke={t.isMajor ? '#475569' : '#2d3f5a'}
-                  strokeWidth={t.isMajor ? '1.5' : '0.8'}
-                  strokeLinecap="round"
-                />
-                {t.isMajor && (
-                  <text x={t.lx} y={t.ly} textAnchor="middle" dominantBaseline="middle"
-                    fill="#64748b" fontSize="6" fontFamily="'JetBrains Mono', monospace" fontWeight="600"
-                  >
-                    {t.labelVal}
-                  </text>
-                )}
-              </g>
+              <line key={i} x1={t.ox} y1={t.oy} x2={t.ix} y2={t.iy}
+                stroke="#334155" strokeWidth={t.isMajor ? "1.2" : "0.9"} strokeLinecap="round"
+              />
             ))}
 
-            {/* Active Value Arc */}
-            {pct > 0.005 && (
+            {/* Active Value Track */}
+            {pct > 0.01 && (
               <path d={arcD(58, START, valueEndDeg)} fill="none"
-                stroke={`url(#ps-track-grad)`} strokeWidth="5" strokeLinecap="round"
+                stroke="url(#ps-track-grad)" strokeWidth="4" strokeLinecap="round"
                 filter="url(#ps-glow)"
                 style={{ transition: 'd 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
               />
             )}
 
             {/* Value Dot */}
-            {pct > 0.005 && (
-              <circle cx={dotX} cy={dotY} r={4.5} fill="#ffffff"
+            {pct > 0.01 && (
+              <circle cx={dotX} cy={dotY} r={3.5} fill="#ffffff"
                 filter="url(#ps-glow)"
                 style={{ transition: 'cx 0.8s cubic-bezier(0.4, 0, 0.2, 1), cy 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
               />
             )}
 
-            {/* Center circle decoration */}
-            <circle cx={CX} cy={CY} r="22" fill="#060e1d" stroke="#1a2b4c" strokeWidth="1.5" />
-            <circle cx={CX} cy={CY} r="4" fill={pressColor}
-              style={{ filter: `drop-shadow(0 0 6px ${pressColor})` }}
-            />
-
-            {/* Pressure Value */}
-            <text x={CX} y={CY - 5} textAnchor="middle"
-              fill="#f8fafc" fontSize="20" fontWeight="900" fontFamily="'Inter', sans-serif"
-              style={{ textShadow: `0 0 12px ${pressColor}80` }}
+            {/* Value Text */}
+            <text x={CX} y={CY + 12} textAnchor="middle" fill="#ffffff"
+              fontSize="20" fontWeight="800" fontFamily="'Inter', sans-serif"
+              style={{ textShadow: `0 0 10px ${pressColor}60` }}
             >
               {pressure.toFixed(2)}
             </text>
-            <text x={CX} y={CY + 13} textAnchor="middle"
-              fill="#94a3b8" fontSize="8" fontWeight="700" fontFamily="'JetBrains Mono', monospace"
-              letterSpacing="1"
+
+            {/* Unit Text */}
+            <text x={CX} y={CY + 28} textAnchor="middle" fill="#94a3b8"
+              fontSize="8" fontWeight="600"
             >
-              BAR
+              Bar
             </text>
           </svg>
         </div>

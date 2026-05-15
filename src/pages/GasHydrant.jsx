@@ -42,9 +42,10 @@ const SUBTAB_STYLE = (active) => ({
 
 export default function GasHydrant() {
   const { state } = useSensor();
-  const { node4, water_level, water_pressure, water_distance } = state;
+  const { panelData, node4, water_level, water_pressure, water_distance } = state;
   const [activeTab, setActiveTab] = useState('gas');
   const [hydrantSubTab, setHydrantSubTab] = useState('overview');
+  const [gasSubTab, setGasSubTab] = useState('overview');
 
   return (
     <div className="page-gradient" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -64,39 +65,91 @@ export default function GasHydrant() {
 
         {/* ── GAS TAB ── */}
         {activeTab === 'gas' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-            {/* CO2 PRESSURE */}
-            <GasPanel
-              title="SMART CO2 PRESSURE MONITORING"
-              pressure={-369}
-              maxPressure={400}
-              valve_status="OPEN"
-              valveLabel="Status Kebocoran"
-              iconColor="#ef4444"
-            />
-            {/* SCHEMATIC */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px' }}>
-                FIELD SCHEMATIC / LIVE
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <div style={{
-                  width: '100%', height: 120,
-                  background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 12px 12px 12px', position: 'relative'
-                }}>
-                  <Flame size={48} color="#10b981" />
-                  <div style={{
-                    position: 'absolute', bottom: 10, right: 10,
-                    padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
-                    fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
-                  }}>
-                    GAS-UNIT
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Sub-tab Navigation */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setGasSubTab('overview')} style={SUBTAB_STYLE(gasSubTab === 'overview')}>
+                <Flame size={13} />
+                Overview
+              </button>
+              <button onClick={() => setGasSubTab('pressure')} style={SUBTAB_STYLE(gasSubTab === 'pressure')}>
+                <Gauge size={13} />
+                Pressure Sensor
+              </button>
+            </div>
+
+            {/* ── Overview sub-tab ── */}
+            {gasSubTab === 'overview' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+                {/* CO2 PRESSURE */}
+                <GasPanel
+                  title="SMART CO2 PRESSURE MONITORING"
+                  pressure={panelData?.gas_pressure ?? 0}
+                  maxPressure={12}
+                  valve_status={panelData?.gas_valve === 'TERBUKA' || panelData?.gas_valve === 'OPEN' ? 'OPEN' : 'CLOSED'}
+                  valveLabel="Status Kebocoran"
+                  iconColor="#ef4444"
+                />
+                {/* SCHEMATIC */}
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px' }}>
+                    FIELD SCHEMATIC / LIVE
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{
+                      width: '100%', height: 120,
+                      background: '#040b16', borderRadius: 12, border: '1px solid #1a3558',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 12px 12px 12px', position: 'relative'
+                    }}>
+                      <Flame size={48} color="#10b981" />
+                      <div style={{
+                        position: 'absolute', bottom: 10, right: 10,
+                        padding: '4px 10px', border: '1px solid #10b981', borderRadius: 4,
+                        fontSize: 8, color: '#10b981', fontWeight: 700, letterSpacing: '0.05em'
+                      }}>
+                        GAS-UNIT
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* ── Pressure Sensor sub-tab ── */}
+            {gasSubTab === 'pressure' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+                {/* Info banner */}
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <Gauge size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#fca5a5', marginBottom: 2 }}>
+                      Sensor Tekanan Gas — MQ-7 / CO2
+                    </div>
+                    <div style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
+                      Mendeteksi tekanan gas dalam sistem tabung/pipa gas dalam satuan <strong style={{ color: '#64748b' }}>Bar</strong>.
+                      Range normal: <strong style={{ color: '#10b981' }}>0 – 5 Bar</strong>.
+                      Batas waspada: <strong style={{ color: '#f59e0b' }}>{'>'} 8 Bar (Overpressure)</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main pressure gauge */}
+                <PressureSensorCard
+                  pressure={panelData?.gas_pressure ?? 0}
+                  maxPressure={12}
+                  title="Tekanan Gas CO2"
+                  subtitle="Sensor Gas MQ-7 / CO2 • Bar"
+                  iconColor="#ef4444"
+                />
+              </div>
+            )}
           </div>
         )}
 

@@ -48,12 +48,23 @@ function reducer(state, action) {
       const newState = { ...state, lastUpdate: now };
       const rts = { ...state.realDataTimestamps };
 
-      if (d.node_id === 'master') {
+      if (d.node_id === 'master' || d.node_id === 'env') {
         rts.master = nowMs;
         // Hanya update panelData.voltage jika nilainya masuk akal sebagai tegangan AC (>= 100V)
         // Ini mencegah tegangan output sensor (0-10V) merusak gauge tegangan listrik
         const incomingVoltage = d.voltage;
         const isRealACVoltage = incomingVoltage != null && incomingVoltage >= 100;
+
+        // Pemetaan untuk sensor baru (env)
+        const newThermalTemp = d.max_temp ?? d.thermal_temp;
+        const newCo2Ppm = d.mq7_ppm ?? d.co2_ppm;
+        let newUvDetected = state.panelData?.uv_detected ?? 0;
+        if (d.flame_status) {
+          newUvDetected = d.flame_status === 'DANGER' ? 1 : 0;
+        } else if (d.uv_detected !== undefined) {
+          newUvDetected = d.uv_detected;
+        }
+
         newState.panelData = {
           voltage:         isRealACVoltage ? incomingVoltage : (state.panelData?.voltage ?? 220),
           current_amp:     d.current_amp     ?? (state.panelData?.current_amp     ?? 0),
@@ -61,11 +72,14 @@ function reducer(state, action) {
           energy_kwh:      d.energy_kwh      ?? (state.panelData?.energy_kwh      ?? 0),
           temperature_sht: d.temperature_sht ?? (state.panelData?.temperature_sht ?? 25),
           humidity:        d.humidity        ?? (state.panelData?.humidity        ?? 50),
-          thermal_temp:    d.thermal_temp    ?? (state.panelData?.thermal_temp    ?? 25),
-          co2_ppm:         d.co2_ppm         ?? (state.panelData?.co2_ppm         ?? 0),
-          uv_detected:     d.uv_detected     ?? (state.panelData?.uv_detected     ?? 0),
+          thermal_temp:    newThermalTemp    ?? (state.panelData?.thermal_temp    ?? 25),
+          co2_ppm:         newCo2Ppm         ?? (state.panelData?.co2_ppm         ?? 0),
+          uv_detected:     newUvDetected,
           // Simpan tegangan output sensor (0-10V) terpisah untuk keperluan debugging
           sensor_voltage:  d.sensor_voltage  ?? (state.panelData?.sensor_voltage  ?? null),
+          frequency:       d.frequency       ?? (state.panelData?.frequency       ?? 50),
+          gas_pressure:    d.gas_pressure    ?? (state.panelData?.gas_pressure    ?? 0),
+          gas_valve:       d.gas_valve       ?? (state.panelData?.gas_valve       ?? 'CLOSED'),
         };
         const newPoint = {
           time:    now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -100,17 +114,10 @@ function reducer(state, action) {
         };
       }
       if (d.water_level    != null) { rts.water_level    = nowMs; newState.water_level    = d.water_level; }
-      // Terima water_pressure dari field asli ATAU dari remap backend (pressure transducer ESP32)
-      const wpValue = d.water_pressure ?? null;
-      if (wpValue != null) {
+      // Terima water_pressure dari field asli
+      if (d.water_pressure != null) {
         rts.water_pressure = nowMs;
-        newState.water_pressure = wpValue;
-        // Sinkronkan juga ke node4.pressure supaya gauge HydrantPanel terupdate
-        newState.node4 = {
-          ...(newState.node4 || state.node4 || { valve_status: 'CLOSED' }),
-          pressure: wpValue,
-        };
-        rts.node4 = nowMs;
+        newState.water_pressure = d.water_pressure;
       }
       if (d.water_distance != null)   { rts.water_distance = nowMs; newState.water_distance = d.water_distance; }
       // Status katup dari hardware ESP32 (valve_status_hw)
@@ -120,13 +127,6 @@ function reducer(state, action) {
           ...state.actuators,
           VALVE: d.valve_status_hw === 'TERBUKA' ? 'OPEN' : 'CLOSED',
         };
-        // Juga update node4.valve_status supaya HydrantPanel ikut berubah
-        // Gunakan newState.node4 (sudah diupdate pressure di atas) atau fallback ke state
-        newState.node4 = {
-          ...(newState.node4 || state.node4 || { pressure: 0 }),
-          valve_status: d.valve_status_hw === 'TERBUKA' ? 'OPEN' : 'CLOSED',
-        };
-        rts.node4 = nowMs; // tandai sebagai data real
       }
       if (d.actuators) newState.actuators = { ...state.actuators, ...d.actuators };
 
@@ -165,6 +165,7 @@ function reducer(state, action) {
           panelData: isFresh(rts, 'master') ? state.panelData : {
             voltage: 220.5, current_amp: 150.2, power_kw: 1.8, energy_kwh: 1245.5,
             temperature_sht: 28.35, humidity: 54.2, thermal_temp: 27.2, co2_ppm: 0.014, uv_detected: 0,
+            gas_pressure: 5.2, gas_valve: 'CLOSED',
           },
           node3: isFresh(rts, 'node3') ? state.node3
             : { temperature: 30.1, humidity: 57.8 },
@@ -209,6 +210,8 @@ function reducer(state, action) {
           uv_detected:     Math.random() > 0.95
             ? (state.panelData.uv_detected === 1 ? 0 : 1)
             : state.panelData.uv_detected,
+          gas_pressure:    +(Math.max(0, (state.panelData.gas_pressure || 0) + (Math.random() - 0.5) * 0.5)).toFixed(2),
+          gas_valve:       state.panelData.gas_valve || 'CLOSED',
         };
         nextState.energyHistory = [...state.energyHistory.slice(-29), newPoint];
       }

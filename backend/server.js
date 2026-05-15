@@ -39,14 +39,36 @@ const mqttClient = mqtt.connect('mqtt://broker.emqx.io');
 
 mqttClient.on('connect', () => {
   console.log('🌐 Connected to MQTT Broker (broker.emqx.io)');
-  mqttClient.subscribe('projek_orange_pi/sensor/master', (err) => {
+  mqttClient.subscribe(['projek_orange_pi/sensor/master', 'projek_orange_pi/sensor/env'], (err) => {
     if (!err) {
-      console.log('📡 Subscribed to MQTT topic: projek_orange_pi/sensor/master');
+      console.log('📡 Subscribed to MQTT topics: projek_orange_pi/sensor/master & projek_orange_pi/sensor/env');
     } else {
       console.error('❌ MQTT Subscribe error:', err);
     }
   });
 });
+
+// ── Cache Data Sensor ──────────────────────────────────────────
+let latestSensorData = {
+  ac_voltage: null,
+  current_amp: null,
+  frequency: null,
+  power_kw: null,
+  temperature_sht: null,
+  humidity: null,
+  pressure: null,
+  water_pressure: null,
+  mq7_ppm: null,
+  co2_ppm: null,
+  max_temp: null,
+  thermal_temp: null,
+  smoke_status: 'NORMAL',
+  flame_status: 'NORMAL',
+  heat_status: 'NORMAL',
+  thermal_status: 'NORMAL',
+  water_level: null,
+  valve_status: 'CLOSED'
+};
 
 mqttClient.on('message', async (topic, message) => {
   // ── 1. Parse JSON dulu — jika gagal, abaikan pesan ini ──
@@ -58,20 +80,41 @@ mqttClient.on('message', async (topic, message) => {
     return;
   }
 
-  data.node_id = 'master';
+  if (topic === 'projek_orange_pi/sensor/master') {
+    data.node_id = 'master';
+  } else if (topic === 'projek_orange_pi/sensor/env') {
+    data.node_id = 'env';
+  } else {
+    data.node_id = 'unknown';
+  }
 
-  // ── 2. Remap field sensor tekanan ke nama yang dikenal UI ──
-  // Sensor Sonseiko (pressure transducer 0-25Bar, output 0-10V via INA226):
-  //   - data.voltage   = tegangan output sensor (0-10V) — BUKAN tegangan listrik AC
-  //   - data.pressure  = tekanan dihitung (0-250 unit)
-  // Kita remap agar tidak merusak gauge tegangan listrik (180-260V AC) di dashboard.
-  const emitPayload = {
-    ...data,
-    sensor_voltage:  data.voltage  ?? null,   // simpan sebagai sensor_voltage
-    water_pressure:  data.pressure ?? null,   // tampilkan di gauge tekanan air
-    valve_status_hw: data.valve_status ?? null, // status katup dari hardware
-    voltage:         undefined,               // hapus agar tidak mengisi gauge tegangan AC
-  };
+  // Merge incoming data into global cache
+  Object.keys(data).forEach(key => {
+    if (data[key] !== undefined && data[key] !== null) {
+      latestSensorData[key] = data[key];
+    }
+  });
+
+  let emitPayload = { ...data };
+
+  // ── 2. Remap field khusus jika dari topik master ──
+  if (topic === 'projek_orange_pi/sensor/master') {
+    emitPayload = {
+      ...emitPayload,
+      sensor_voltage:  data.voltage  ?? null,   // simpan sebagai sensor_voltage
+      gas_pressure:    data.pressure ?? null,   // tampilkan di gauge tekanan gas
+      gas_valve:       data.valve_status ?? null, // status katup gas
+      valve_status_hw: data.valve_status ?? null, // status katup dari hardware
+      voltage:         undefined,               // hapus agar tidak mengisi gauge tegangan AC
+    };
+  } else if (topic === 'projek_orange_pi/sensor/env') {
+    // Topik env mengirimkan ac_voltage untuk tegangan listrik
+    emitPayload = {
+      ...emitPayload,
+      voltage: data.ac_voltage ?? null,
+    };
+  }
+
   // Hapus key undefined agar tidak terkirim ke frontend
   Object.keys(emitPayload).forEach(k => emitPayload[k] === undefined && delete emitPayload[k]);
 
@@ -84,23 +127,32 @@ mqttClient.on('message', async (topic, message) => {
     const {
       current_amp, frequency, power_kw,
       temperature_sht, humidity,
-      pressure, water_level,
+      pressure, water_level, water_pressure,
+      mq7_ppm, co2_ppm, max_temp, thermal_temp,
       smoke_status, flame_status, heat_status, thermal_status,
-    } = data;
+      ac_voltage, valve_status
+    } = latestSensorData; // Gunakan data gabungan dari cache
+
+    let dbValveStatus = 'CLOSED';
+    if (valve_status === 'TERBUKA' || valve_status === 'OPEN') dbValveStatus = 'OPEN';
 
     const [result] = await pool.execute(
       `INSERT INTO sensor_readings
        (node_id, voltage, current_amp, frequency, power_kw, temperature, humidity,
-        pressure, smoke_status, flame_status, heat_status, thermal_status, water_level)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pressure, water_pressure, co2_ppm, thermal_temp, smoke_status, flame_status, heat_status, thermal_status, water_level, valve_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         1,
-        null, current_amp ?? null, frequency ?? null, power_kw ?? null,
+        ac_voltage ?? null, current_amp ?? null, frequency ?? null, power_kw ?? null,
         temperature_sht ?? null, humidity ?? null,
-        pressure ?? null,
-        smoke_status ?? 'NORMAL', flame_status ?? 'NORMAL',
-        heat_status ?? 'NORMAL', thermal_status ?? 'NORMAL',
+        pressure ?? null, water_pressure ?? null,
+        mq7_ppm ?? co2_ppm ?? null, max_temp ?? thermal_temp ?? null,
+        (smoke_status === 'BAHAYA' ? 'DANGER' : (smoke_status ?? 'NORMAL')),
+        (flame_status === 'BAHAYA' ? 'DANGER' : (flame_status ?? 'NORMAL')),
+        (heat_status === 'BAHAYA' ? 'DANGER' : (heat_status ?? 'NORMAL')),
+        (thermal_status === 'BAHAYA' ? 'DANGER' : (thermal_status ?? 'NORMAL')),
         water_level ?? null,
+        dbValveStatus
       ]
     );
     dbResult = result;
@@ -132,7 +184,11 @@ mqttClient.on('message', async (topic, message) => {
     const [updatedStates] = await pool.execute('SELECT device, status FROM actuator_state');
     updatedActuators = Object.fromEntries(updatedStates.map(s => [s.device, s.status]));
 
-    console.log(`📥 MQTT data received & saved — pressure: ${data.pressure}, valve: ${data.valve_status}`);
+    if (topic === 'projek_orange_pi/sensor/master') {
+      console.log(`📥 MQTT MASTER data saved — pressure: ${data.pressure}, valve: ${data.valve_status}`);
+    } else if (topic === 'projek_orange_pi/sensor/env') {
+      console.log(`📥 MQTT ENV data saved — temp: ${data.temperature_sht}C, voltage: ${data.ac_voltage}V, mq7: ${data.mq7_ppm}ppm`);
+    }
   } catch (dbErr) {
     // ⚠️ DB gagal, tapi jangan blokir UI — tetap kirim data ke frontend
     console.error('⚠️  MQTT DB error (data tetap diteruskan ke UI):', dbErr.message);

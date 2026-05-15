@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
 
     const [rows] = await pool.execute(
       `SELECT * FROM sensor_readings ${where} ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
-      [...params, parseInt(limit), offset]
+      [...params, String(limit), String(offset)]
     );
 
     res.json({ total, page: parseInt(page), limit: parseInt(limit), data: rows });
@@ -122,10 +122,10 @@ router.get('/dates', async (req, res) => {
         ${STATUS_COLUMNS}
       FROM sensor_readings
       ${where}
-      GROUP BY DATE(timestamp)
+      GROUP BY DATE_FORMAT(timestamp, '%Y-%m-%d')
       ORDER BY date DESC
       LIMIT ? OFFSET ?`,
-      [...params, safeLimit, offset]
+      [...params, String(safeLimit), String(offset)]
     );
 
     res.json({ total, page: safePage, limit: safeLimit, data: rows });
