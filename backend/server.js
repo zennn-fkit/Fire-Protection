@@ -4,13 +4,27 @@ import { Server as SocketIO } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mqtt from 'mqtt';
+import cron from 'node-cron';
 import pool from './config/db.js';
 import { evaluateAutoControl } from './utils/autoControl.js';
 
-import sensorRoutes  from './routes/sensor.js';
-import historyRoutes from './routes/history.js';
-import alertRoutes   from './routes/alerts.js';
-import controlRoutes from './routes/control.js';
+import sensorRoutes     from './routes/sensor.js';
+import historyRoutes   from './routes/history.js';
+import alertRoutes     from './routes/alerts.js';
+import controlRoutes   from './routes/control.js';
+import waterUsageRoutes, { calcVolume } from './routes/waterUsage.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+const TANK_CONFIG_PATH = join(__dirname, './config/tankConfig.json');
+
+function readTankConfig() {
+  try { return JSON.parse(readFileSync(TANK_CONFIG_PATH, 'utf8')); }
+  catch { return { shape: 'cylinder', maxDistanceCm: 200, cylinder: { diameterCm: 120 }, rectangle: { lengthCm: 150, widthCm: 100 } }; }
+}
 
 dotenv.config();
 
@@ -54,6 +68,7 @@ let latestSensorData = {
   current_amp: null,
   frequency: null,
   power_kw: null,
+  energy_kwh: null,      // ✅ Akumulasi energi listrik dari PZEM-004T
   temperature_sht: null,
   humidity: null,
   pressure: null,
@@ -125,7 +140,7 @@ mqttClient.on('message', async (topic, message) => {
 
   try {
     const {
-      current_amp, frequency, power_kw,
+      current_amp, frequency, power_kw, energy_kwh,
       temperature_sht, humidity,
       pressure, water_level, water_pressure,
       mq7_ppm, co2_ppm, max_temp, thermal_temp,
@@ -138,12 +153,13 @@ mqttClient.on('message', async (topic, message) => {
 
     const [result] = await pool.execute(
       `INSERT INTO sensor_readings
-       (node_id, voltage, current_amp, frequency, power_kw, temperature, humidity,
+       (node_id, voltage, current_amp, frequency, power_kw, energy_kwh, temperature, humidity,
         pressure, water_pressure, co2_ppm, thermal_temp, smoke_status, flame_status, heat_status, thermal_status, water_level, valve_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         1,
         ac_voltage ?? null, current_amp ?? null, frequency ?? null, power_kw ?? null,
+        energy_kwh ?? null,
         temperature_sht ?? null, humidity ?? null,
         pressure ?? null, water_pressure ?? null,
         mq7_ppm ?? co2_ppm ?? null, max_temp ?? thermal_temp ?? null,
@@ -210,10 +226,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Routes ───────────────────────────────────────────────────
-app.use('/api/sensor',  sensorRoutes);
-app.use('/api/history', historyRoutes);
-app.use('/api/alerts',  alertRoutes);
-app.use('/api/control', controlRoutes);
+app.use('/api/sensor',      sensorRoutes);
+app.use('/api/history',     historyRoutes);
+app.use('/api/alerts',      alertRoutes);
+app.use('/api/control',     controlRoutes);
+app.use('/api/water-usage', waterUsageRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'OK', time: new Date() }));
@@ -221,16 +238,43 @@ app.get('/health', (_req, res) => res.json({ status: 'OK', time: new Date() }));
 // 404 handler
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 
+// ── Cron Job: Snapshot volume air setiap tengah malam ────────
+// Format: '0 0 * * *' = jam 00:00 setiap hari
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const cfg   = readTankConfig();
+    const dist  = latestSensorData.water_distance;   // jarak sensor (cm)
+    const maxDist = cfg.maxDistanceCm || 200;
+    const waterLevelCm = dist != null ? Math.max(0, maxDist - dist) : null;
+    const volume = calcVolume(waterLevelCm, cfg);
+    const today  = new Date().toISOString().slice(0, 10);
+
+    await pool.execute(
+      `INSERT INTO water_usage (date, volume_m3, status)
+       VALUES (?, ?, 'SAVED')
+       ON DUPLICATE KEY UPDATE volume_m3 = ?, status = 'SAVED'`,
+      [today, volume, volume]
+    );
+    console.log(`🕛 [CRON] water_usage snapshot: ${today} → ${volume} m³ (level: ${waterLevelCm?.toFixed(1)} cm)`);
+  } catch (err) {
+    console.error('🕛 [CRON] water_usage error:', err.message);
+  }
+}, { timezone: 'Asia/Jakarta' });
+
 // ── Start Server ─────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT) || 5000;
 server.listen(PORT, () => {
   console.log(`\n🔥 Smart Fire Backend running on http://localhost:${PORT}`);
   console.log(`📡 Socket.io ready`);
   console.log(`📋 API Endpoints:`);
-  console.log(`   POST  /api/sensor/data    — Receive sensor data from Orange Pi`);
-  console.log(`   GET   /api/sensor/latest  — Latest readings`);
-  console.log(`   GET   /api/history        — Historical data`);
-  console.log(`   GET   /api/alerts         — Alert logs`);
-  console.log(`   GET   /api/control        — Actuator states`);
-  console.log(`   POST  /api/control        — Manual control\n`);
+  console.log(`   POST  /api/sensor/data       — Receive sensor data from Orange Pi`);
+  console.log(`   GET   /api/sensor/latest     — Latest readings`);
+  console.log(`   GET   /api/history           — Historical data`);
+  console.log(`   GET   /api/alerts            — Alert logs`);
+  console.log(`   GET   /api/control           — Actuator states`);
+  console.log(`   POST  /api/control           — Manual control`);
+  console.log(`   GET   /api/water-usage       — Water usage (7 hari terakhir)`);
+  console.log(`   GET   /api/water-usage/config — Tank config`);
+  console.log(`   POST  /api/water-usage/config — Save tank config`);
+  console.log(`🕛 Cron job aktif: snapshot volume air setiap tengah malam WIB\n`);
 });

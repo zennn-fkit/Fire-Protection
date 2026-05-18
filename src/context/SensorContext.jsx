@@ -50,10 +50,9 @@ function reducer(state, action) {
 
       if (d.node_id === 'master' || d.node_id === 'env') {
         rts.master = nowMs;
-        // Hanya update panelData.voltage jika nilainya masuk akal sebagai tegangan AC (>= 100V)
-        // Ini mencegah tegangan output sensor (0-10V) merusak gauge tegangan listrik
+        // Update panelData.voltage dari data sensor
         const incomingVoltage = d.voltage;
-        const isRealACVoltage = incomingVoltage != null && incomingVoltage >= 100;
+        const isRealACVoltage = incomingVoltage != null; // Terima semua nilai, termasuk 0V
 
         // Pemetaan untuk sensor baru (env)
         const newThermalTemp = d.max_temp ?? d.thermal_temp;

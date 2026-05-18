@@ -6,7 +6,8 @@ import HydrantPanel from '../components/dashboard/HydrantPanel';
 import WaterTankPanel from '../components/dashboard/WaterTankPanel';
 import PressureSensorCard from '../components/dashboard/PressureSensorCard';
 import UltrasonicSensorCard from '../components/dashboard/UltrasonicSensorCard';
-import { Flame, Droplets, Gauge, Waves } from 'lucide-react';
+import TankConfigPanel from '../components/dashboard/TankConfigPanel';
+import { Flame, Droplets, Gauge, Waves, Settings } from 'lucide-react';
 
 const TAB_STYLE = (active) => ({
   flex: 1,
@@ -46,6 +47,11 @@ export default function GasHydrant() {
   const [activeTab, setActiveTab] = useState('gas');
   const [hydrantSubTab, setHydrantSubTab] = useState('overview');
   const [gasSubTab, setGasSubTab] = useState('overview');
+
+  // Hitung ketinggian air (cm) dari jarak ultrasonik
+  // water_distance = jarak sensor ke permukaan (cm), maxDistanceCm default 200
+  const MAX_DIST_CM = 200;
+  const waterLevelCm = water_distance != null ? Math.max(0, MAX_DIST_CM - water_distance) : null;
 
   return (
     <div className="page-gradient" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -170,6 +176,10 @@ export default function GasHydrant() {
               <button onClick={() => setHydrantSubTab('ultrasonic')} style={SUBTAB_STYLE(hydrantSubTab === 'ultrasonic')}>
                 <Waves size={13} />
                 Ultrasonik
+              </button>
+              <button onClick={() => setHydrantSubTab('config')} style={SUBTAB_STYLE(hydrantSubTab === 'config')}>
+                <Settings size={13} />
+                Konfigurasi Tangki
               </button>
             </div>
 
@@ -372,6 +382,14 @@ export default function GasHydrant() {
                 {/* Also show simple water level percentage from WaterTank sensor */}
                 <WaterTankPanel level={water_level !== null ? water_level : 0} />
               </div>
+            )}
+
+            {/* ── Konfigurasi Tangki sub-tab ── */}
+            {hydrantSubTab === 'config' && (
+              <TankConfigPanel
+                waterLevelCm={waterLevelCm}
+                waterDistanceCm={water_distance}
+              />
             )}
           </div>
         )}

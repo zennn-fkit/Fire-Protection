@@ -79,6 +79,7 @@ function createMockDates() {
       current_amp: 145 + Math.random() * 15,
       frequency: 50 + (Math.random() - 0.5) * 0.3,
       power_kw: 1.6 + Math.random() * 0.4,
+      energy_kwh: 1200 + Math.random() * 300,
       temperature: 28 + Math.random() * 4,
       humidity: 52 + Math.random() * 10,
       pressure: 4.5 + Math.random() * 2,
@@ -100,6 +101,7 @@ function createMockNodeSummaries(date) {
     current_amp: nodeId === 1 ? 145 + Math.random() * 15 : null,
     frequency: nodeId === 1 ? 50 + (Math.random() - 0.5) * 0.3 : null,
     power_kw: nodeId === 1 ? 1.6 + Math.random() * 0.4 : null,
+    energy_kwh: nodeId === 1 ? 1200 + Math.random() * 300 : null,
     temperature: nodeId === 2 || nodeId === 3 ? 28 + Math.random() * 4 : null,
     humidity: nodeId === 2 || nodeId === 3 ? 52 + Math.random() * 10 : null,
     pressure: nodeId === 4 ? 4.5 + Math.random() * 2 : null,
@@ -124,6 +126,7 @@ function createMockDetail(date, nodeId, page) {
       current_amp: nodeId === 1 ? (140 + Math.random() * 20) : null,
       frequency: nodeId === 1 ? (50 + (Math.random() - 0.5) * 0.4) : null,
       power_kw: nodeId === 1 ? (1.5 + Math.random() * 0.5) : null,
+      energy_kwh: nodeId === 1 ? (1200 + (startIndex + i) * 0.01 + Math.random() * 0.005) : null,
       temperature: nodeId === 2 || nodeId === 3 ? (27 + Math.random() * 5) : null,
       humidity: nodeId === 2 || nodeId === 3 ? (50 + Math.random() * 15) : null,
       pressure: nodeId === 4 ? (4 + Math.random() * 3) : null,
@@ -230,6 +233,12 @@ export default function History() {
     { label: 'Record', render: r => r.total_records },
     { label: 'Tegangan (V)', render: r => val(r.voltage) },
     { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    {
+      label: 'Energy (kWh)',
+      render: r => r.energy_kwh != null
+        ? <span style={{ color: '#f97316', fontWeight: 700 }}>{Number(r.energy_kwh).toFixed(2)}</span>
+        : <span style={{ color: '#475569' }}>-</span>
+    },
     { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
     { label: 'Kelembaban (%)', render: r => val(r.humidity) },
     { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
@@ -244,6 +253,12 @@ export default function History() {
     { label: 'Record', render: r => r.total_records },
     { label: 'Tegangan (V)', render: r => val(r.voltage) },
     { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    {
+      label: 'Energy (kWh)',
+      render: r => r.energy_kwh != null
+        ? <span style={{ color: '#f97316', fontWeight: 700 }}>{Number(r.energy_kwh).toFixed(2)}</span>
+        : <span style={{ color: '#475569' }}>-</span>
+    },
     { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
     { label: 'Kelembaban (%)', render: r => val(r.humidity) },
     { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
@@ -260,6 +275,12 @@ export default function History() {
     { label: 'Node', render: r => <span className="history-node-badge">N-{r.node_id}</span> },
     { label: 'Tegangan (V)', render: r => val(r.voltage) },
     { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+    {
+      label: 'Energy (kWh)',
+      render: r => r.energy_kwh != null
+        ? <span style={{ color: '#f97316', fontWeight: 700 }}>{Number(r.energy_kwh).toFixed(2)}</span>
+        : <span style={{ color: '#475569' }}>-</span>
+    },
     { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
     { label: 'Kelembaban (%)', render: r => val(r.humidity) },
     { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
@@ -280,6 +301,7 @@ export default function History() {
     { header: 'Record', dataKey: 'total_records', accessor: r => r.total_records ?? '' },
     { header: 'Tegangan (V)', dataKey: 'voltage', accessor: r => r.voltage != null ? Number(r.voltage).toFixed(1) : '' },
     { header: 'Daya (kW)', dataKey: 'power_kw', accessor: r => r.power_kw != null ? Number(r.power_kw).toFixed(2) : '' },
+    { header: 'Energy (kWh)', dataKey: 'energy_kwh', accessor: r => r.energy_kwh != null ? Number(r.energy_kwh).toFixed(2) : '' },
     { header: 'Sensor Suhu (C)', dataKey: 'temperature', accessor: r => r.temperature != null ? Number(r.temperature).toFixed(1) : '' },
     { header: 'Kelembaban (%)', dataKey: 'humidity', accessor: r => r.humidity != null ? Number(r.humidity).toFixed(1) : '' },
     { header: 'Sensor Karbon (PPM)', dataKey: 'co2_ppm', accessor: r => r.co2_ppm != null ? Number(r.co2_ppm).toFixed(2) : '' },

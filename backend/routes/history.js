@@ -8,9 +8,13 @@ const AVG_COLUMNS = `
   AVG(current_amp) as current_amp,
   AVG(frequency) as frequency,
   AVG(power_kw) as power_kw,
+  AVG(energy_kwh) as energy_kwh,
   AVG(temperature) as temperature,
   AVG(humidity) as humidity,
   AVG(pressure) as pressure,
+  AVG(water_pressure) as water_pressure,
+  AVG(co2_ppm) as co2_ppm,
+  AVG(thermal_temp) as thermal_temp,
   AVG(water_level) as water_level
 `;
 

@@ -21,4 +21,10 @@ export const resolveAlert = (id)     => api.patch(`/api/alerts/${id}/resolve`);
 export const getControl    = ()       => api.get('/api/control');
 export const postControl   = (data)   => api.post('/api/control', data);
 
+// ── Water Usage ───────────────────────────────────────────────
+export const getWaterUsage       = ()       => api.get('/api/water-usage');
+export const getWaterUsageConfig = ()       => api.get('/api/water-usage/config');
+export const saveWaterUsageConfig = (data)  => api.post('/api/water-usage/config', data);
+export const snapshotWaterUsage   = (data)  => api.post('/api/water-usage/snapshot', data);
+
 export default api;

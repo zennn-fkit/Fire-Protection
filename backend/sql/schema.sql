@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
   current_amp     FLOAT    DEFAULT NULL COMMENT 'Ampere',
   frequency       FLOAT    DEFAULT NULL COMMENT 'Hz',
   power_kw        FLOAT    DEFAULT NULL COMMENT 'kW',
+  energy_kwh      FLOAT    DEFAULT NULL COMMENT 'kWh - Akumulasi energi dari PZEM-004T',
 
   -- Node 2 & 3: Humidity/Temperature Sensors
   temperature     FLOAT    DEFAULT NULL COMMENT 'Celsius',
