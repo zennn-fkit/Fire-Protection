@@ -26,7 +26,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function EnergyChart({ data, title = 'Tren Realtime', initialMetric = 'kw' }) {
+export default function EnergyChart({
+  data,
+  title = 'Tren Realtime',
+  initialMetric = 'kw',
+  embedded = false,
+  chartHeight = 120,
+}) {
   const [selectedId, setSelectedId] = useState(initialMetric);
   const [isOpen, setIsOpen] = useState(false);
   const activeMetric = METRICS.find(m => m.id === selectedId) || METRICS[0];
@@ -42,9 +48,9 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <div className="card" style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+  const chartBody = (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: embedded ? 8 : 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
           {title} ({activeMetric.label})
         </div>
@@ -111,7 +117,7 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={120}>
+      <ResponsiveContainer width="100%" height={chartHeight}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id={`colorMetric-${activeMetric.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -139,6 +145,16 @@ export default function EnergyChart({ data, title = 'Tren Realtime', initialMetr
           />
         </AreaChart>
       </ResponsiveContainer>
+    </>
+  );
+
+  if (embedded) {
+    return <div style={{ flex: 1, minWidth: 0 }}>{chartBody}</div>;
+  }
+
+  return (
+    <div className="card" style={{ flex: 1, minWidth: 0 }}>
+      {chartBody}
     </div>
   );
 }

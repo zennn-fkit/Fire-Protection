@@ -28,6 +28,44 @@ function readTankConfig() {
 
 dotenv.config();
 
+const FIRE_TEMP_WARNING = 40;
+const FIRE_TEMP_DANGER = 60;
+const GAS_WARNING = 1;
+const GAS_DANGER = 1.5;
+
+const STATUS_ALIASES = {
+  NORMAL: 'NORMAL',
+  AMAN: 'NORMAL',
+  OK: 'NORMAL',
+  SAFE: 'NORMAL',
+  WARNING: 'WARNING',
+  WARN: 'WARNING',
+  WASPADA: 'WARNING',
+  DANGER: 'DANGER',
+  BAHAYA: 'DANGER',
+  CRITICAL: 'DANGER',
+};
+
+function normalizeStatus(status) {
+  if (status == null) return null;
+  return STATUS_ALIASES[String(status).trim().toUpperCase()] ?? null;
+}
+
+function thresholdStatus(value, warning, danger) {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return null;
+  if (numberValue >= danger) return 'DANGER';
+  if (numberValue >= warning) return 'WARNING';
+  return 'NORMAL';
+}
+
+function binaryStatus(value) {
+  if (value == null) return null;
+  const normalized = normalizeStatus(value);
+  if (normalized) return normalized;
+  return Number(value) === 1 ? 'DANGER' : 'NORMAL';
+}
+
 const app    = express();
 const server = http.createServer(app);
 
@@ -77,6 +115,7 @@ let latestSensorData = {
   co2_ppm: null,
   max_temp: null,
   thermal_temp: null,
+  uv_detected: null,
   smoke_status: 'NORMAL',
   flame_status: 'NORMAL',
   heat_status: 'NORMAL',
@@ -137,19 +176,51 @@ mqttClient.on('message', async (topic, message) => {
   let dbResult = null;
   let autoActions = [];
   let updatedActuators = {};
+  let normalizedStatuses = {};
 
   try {
     const {
       current_amp, frequency, power_kw, energy_kwh,
       temperature_sht, humidity,
       pressure, water_level, water_pressure,
-      mq7_ppm, co2_ppm, max_temp, thermal_temp,
+      mq7_ppm, co2_ppm, max_temp, thermal_temp, uv_detected,
       smoke_status, flame_status, heat_status, thermal_status,
       ac_voltage, valve_status
     } = latestSensorData; // Gunakan data gabungan dari cache
 
     let dbValveStatus = 'CLOSED';
     if (valve_status === 'TERBUKA' || valve_status === 'OPEN') dbValveStatus = 'OPEN';
+
+    const effectiveSmokeStatus =
+      thresholdStatus(mq7_ppm ?? co2_ppm, GAS_WARNING, GAS_DANGER) ??
+      normalizeStatus(smoke_status) ??
+      'NORMAL';
+    const effectiveFlameStatus =
+      binaryStatus(uv_detected ?? 0) ??
+      normalizeStatus(flame_status) ??
+      'NORMAL';
+    const effectiveHeatStatus =
+      thresholdStatus(temperature_sht, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
+      normalizeStatus(heat_status) ??
+      'NORMAL';
+    const effectiveThermalStatus =
+      thresholdStatus(max_temp ?? thermal_temp, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
+      normalizeStatus(thermal_status) ??
+      'NORMAL';
+
+    const normalizedData = {
+      ...data,
+      smoke_status: effectiveSmokeStatus,
+      flame_status: effectiveFlameStatus,
+      heat_status: effectiveHeatStatus,
+      thermal_status: effectiveThermalStatus,
+    };
+    normalizedStatuses = {
+      smoke_status: effectiveSmokeStatus,
+      flame_status: effectiveFlameStatus,
+      heat_status: effectiveHeatStatus,
+      thermal_status: effectiveThermalStatus,
+    };
 
     const [result] = await pool.execute(
       `INSERT INTO sensor_readings
@@ -163,10 +234,10 @@ mqttClient.on('message', async (topic, message) => {
         temperature_sht ?? null, humidity ?? null,
         pressure ?? null, water_pressure ?? null,
         mq7_ppm ?? co2_ppm ?? null, max_temp ?? thermal_temp ?? null,
-        (smoke_status === 'BAHAYA' ? 'DANGER' : (smoke_status ?? 'NORMAL')),
-        (flame_status === 'BAHAYA' ? 'DANGER' : (flame_status ?? 'NORMAL')),
-        (heat_status === 'BAHAYA' ? 'DANGER' : (heat_status ?? 'NORMAL')),
-        (thermal_status === 'BAHAYA' ? 'DANGER' : (thermal_status ?? 'NORMAL')),
+        effectiveSmokeStatus,
+        effectiveFlameStatus,
+        effectiveHeatStatus,
+        effectiveThermalStatus,
         water_level ?? null,
         dbValveStatus
       ]
@@ -175,7 +246,7 @@ mqttClient.on('message', async (topic, message) => {
 
     const [states] = await pool.execute('SELECT device, status FROM actuator_state');
     const currentStates = Object.fromEntries(states.map(s => [s.device, s.status]));
-    const { actions, alerts } = evaluateAutoControl(data, currentStates);
+    const { actions, alerts } = evaluateAutoControl(normalizedData, currentStates);
     autoActions = actions;
 
     for (const action of actions) {
@@ -213,6 +284,7 @@ mqttClient.on('message', async (topic, message) => {
   // ── 4. Selalu emit ke frontend — baik DB sukses maupun gagal ──
   io.emit('sensor:update', {
     ...emitPayload,
+    ...normalizedStatuses,
     id:          dbResult?.insertId ?? null,
     timestamp:   new Date(),
     actuators:   updatedActuators,

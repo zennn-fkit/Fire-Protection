@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Waves, Ruler } from 'lucide-react';
+import HydrantTankStrip from './HydrantTankStrip';
 
 function getLevelColor(level, maxLevel) {
   const pct = level / maxLevel;
@@ -17,7 +18,26 @@ function getLevelStatus(level, maxLevel) {
   return             { label: 'HAMPIR PENUH',   color: '#f59e0b' };
 }
 
-export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 200, title = 'Sensor Ultrasonik' }) {
+export default function UltrasonicSensorCard({
+  distanceCm = 0,
+  maxDistanceCm = 200,
+  title = 'Sensor Ultrasonik',
+  compact = false,
+  variant,
+  embedded = false,
+}) {
+  const resolvedVariant = variant || (compact ? 'compact' : 'default');
+
+  if (resolvedVariant === 'strip') {
+    return (
+      <HydrantTankStrip
+        distanceCm={distanceCm}
+        maxDistanceCm={maxDistanceCm}
+        title={title}
+        embedded={embedded}
+      />
+    );
+  }
   // distanceCm = jarak pantulan sonar (makin kecil = air makin tinggi)
   // waterLevelCm = ketinggian air = max - jarak
   const waterLevelCm  = Math.max(0, maxDistanceCm - distanceCm);
@@ -26,9 +46,9 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
   const levelColor    = getLevelColor(clampedLevel, maxDistanceCm);
   const status        = getLevelStatus(clampedLevel, maxDistanceCm);
 
-  // Wave animation offset
-  const TANK_H = 180;
-  const TANK_W = 90;
+  const isCompact = resolvedVariant === 'compact';
+  const TANK_H = isCompact ? 120 : 180;
+  const TANK_W = isCompact ? 64 : 90;
   const fillH  = TANK_H * levelPct;
 
   // Ruler tick marks
@@ -45,7 +65,7 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
   }, [maxDistanceCm]);
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
@@ -76,9 +96,12 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
 
       {/* Main Body */}
       <div style={{
-        display: 'flex', gap: 16, flex: 1,
-        padding: '16px 20px 16px',
-        alignItems: 'flex-start',
+        display: 'flex',
+        flexDirection: isCompact ? 'column' : 'row',
+        gap: isCompact ? 12 : 16,
+        flex: 1,
+        padding: isCompact ? '12px 14px' : '16px 20px 16px',
+        alignItems: isCompact ? 'center' : 'flex-start',
       }}>
         {/* Tank Visual */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -227,7 +250,14 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
         </div>
 
         {/* Right: Info panel */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
+        <div style={{
+          flex: 1,
+          width: isCompact ? '100%' : undefined,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isCompact ? 8 : 10,
+          paddingTop: isCompact ? 0 : 4,
+        }}>
           {/* Status pill */}
           <div style={{
             padding: '6px 12px', borderRadius: 8,
@@ -246,6 +276,11 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
           </div>
 
           {/* Metrics */}
+          <div style={{
+            display: isCompact ? 'grid' : 'contents',
+            gridTemplateColumns: isCompact ? '1fr 1fr' : undefined,
+            gap: isCompact ? 6 : undefined,
+          }}>
           {[
             { label: 'Ketinggian Air', value: `${clampedLevel.toFixed(1)} cm`, color: levelColor },
             { label: 'Jarak Sonar', value: `${distanceCm.toFixed(1)} cm`, color: '#94a3b8' },
@@ -253,7 +288,8 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
             { label: 'Max Tangki', value: `${maxDistanceCm} cm`, color: '#64748b' },
           ].map(m => (
             <div key={m.label} style={{
-              padding: '8px 10px', borderRadius: 8,
+              padding: isCompact ? '6px 8px' : '8px 10px', borderRadius: 8,
+              marginBottom: isCompact ? 0 : 10,
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(26,53,88,0.5)',
             }}>
               <div style={{ fontSize: 8, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
@@ -261,12 +297,13 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
               </div>
               <div style={{
                 fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 16, fontWeight: 800, color: m.color,
+                fontSize: isCompact ? 13 : 16, fontWeight: 800, color: m.color,
               }}>
                 {m.value}
               </div>
             </div>
           ))}
+          </div>
 
           {/* Progress bar */}
           <div>
@@ -285,17 +322,18 @@ export default function UltrasonicSensorCard({ distanceCm = 0, maxDistanceCm = 2
             </div>
           </div>
 
-          {/* Ruler icon reference */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 10px', borderRadius: 6,
-            background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)',
-          }}>
-            <Ruler size={12} color="#38bdf8" />
-            <span style={{ fontSize: 8, color: '#64748b' }}>
-              Mengukur dari atas tangki ke permukaan air
-            </span>
-          </div>
+          {!isCompact && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 10px', borderRadius: 6,
+              background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)',
+            }}>
+              <Ruler size={12} color="#38bdf8" />
+              <span style={{ fontSize: 8, color: '#64748b' }}>
+                Mengukur dari atas tangki ke permukaan air
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

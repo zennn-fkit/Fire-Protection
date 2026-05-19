@@ -6,9 +6,9 @@
 export const THRESHOLDS = {
   temperature: { warning: 80, danger: 100 },      // °C
   humidity: { low: 20, high: 80 },             // %RH
-  pressure: { dangerLow: 2, warningLow: 4 },   // Bar
+  pressure: { dangerLow: 6, warningLow: 10 },   // Bar
   voltage: { low: 180, high: 260 },            // V
-  water_level: { low: 20 },                        // %
+  water_level: { low: 30 },                        // %
 };
 
 /**

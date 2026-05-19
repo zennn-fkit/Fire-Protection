@@ -1,27 +1,34 @@
 
-import { ZONE_DEFAULT, ZONE_VOLTAGE, ZONE_FREQUENCY } from '../utils/gaugeZones';
+import { ZONE_DEFAULT, ZONE_VOLTAGE } from '../utils/gaugeZones';
 import { useSensor } from '../context/SensorContext';
 import GaugeCard from '../components/dashboard/GaugeCard';
-import EnergyChart      from '../components/dashboard/EnergyChart';
+import MonitoringRealtimePanel from '../components/dashboard/MonitoringRealtimePanel';
 import SensorStatusCard from '../components/dashboard/SensorStatusCard';
-import WaterTankPanel   from '../components/dashboard/WaterTankPanel';
-import EnvPanel         from '../components/dashboard/EnvPanel';
-import Header           from '../components/layout/Header';
-
-
+import Header from '../components/layout/Header';
 
 export default function Dashboard() {
   const { state } = useSensor();
-  const { panelData, node3, detectors, water_level, energyHistory } = state;
+  const { panelData, node3, detectors, water_distance, energyHistory } = state;
 
-  const anyDanger  = detectors ? Object.values(detectors).some(v => v === 'DANGER') : false;
-  const anyWarning = detectors ? Object.values(detectors).some(v => v === 'WARNING') : false;
+  const MAX_TANK_CM = 200;
+
+  const toNumber = value => {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : null;
+  };
+  const dangerValues = [
+    toNumber(panelData?.temperature_sht) >= 60,
+    toNumber(panelData?.thermal_temp) >= 60,
+    toNumber(node3?.temperature) >= 60,
+    toNumber(panelData?.co2_ppm) >= 1.5,
+    Number(panelData?.uv_detected) === 1,
+  ];
+  const anyDanger = dangerValues.some(Boolean);
 
   return (
     <div className="page-gradient">
-      <Header title="Dashboard Monitoring" />
+      <Header title="Monitoring Sensor" />
 
-      {/* Critical Alert Banner */}
       {anyDanger && (
         <div style={{
           margin: '16px 28px 0', padding: '12px 20px', borderRadius: 12,
@@ -38,8 +45,6 @@ export default function Dashboard() {
 
       <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-
-        {/* ── Row 1: Power Gauges ───────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
           {panelData && (
             <>
@@ -67,30 +72,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* ── Row 2: Charts ───────────────────────────────────── */}
-        {energyHistory && energyHistory.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <EnergyChart data={energyHistory} title="Monitoring Realtime 1" initialMetric="kw" />
-            <EnergyChart data={energyHistory} title="Monitoring Realtime 2" initialMetric="voltage" />
-          </div>
-        )}
+        <MonitoringRealtimePanel
+          energyHistory={energyHistory}
+          waterDistance={water_distance}
+          maxTankCm={MAX_TANK_CM}
+        />
 
-        {/* ── Row 3: Env Panels + Water + Detectors ───────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-          {node3 && (
-            <div style={{ gridColumn: 'span 2', display: 'flex' }}>
-              <EnvPanel 
-                title="Monitoring Sensor" 
-                nodes={[
-                  { label: 'Lingkungan (Node 3)', data: node3 }
-                ]}
-                style={{ flex: 1 }}
-              />
-            </div>
-          )}
-          {water_level !== null && <WaterTankPanel level={water_level} />}
-          {detectors && <SensorStatusCard detectors={detectors} />}
-        </div>
+        {detectors && <SensorStatusCard detectors={detectors} />}
 
       </div>
     </div>

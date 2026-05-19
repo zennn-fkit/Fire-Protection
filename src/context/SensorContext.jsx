@@ -1,5 +1,23 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 
+const FIRE_TEMP_WARNING = 40;
+const FIRE_TEMP_DANGER = 60;
+const GAS_WARNING = 1;
+const GAS_DANGER = 1.5;
+
+const STATUS_ALIASES = {
+  NORMAL: 'NORMAL',
+  AMAN: 'NORMAL',
+  OK: 'NORMAL',
+  SAFE: 'NORMAL',
+  WARNING: 'WARNING',
+  WARN: 'WARNING',
+  WASPADA: 'WARNING',
+  DANGER: 'DANGER',
+  BAHAYA: 'DANGER',
+  CRITICAL: 'DANGER',
+};
+
 // ── Helpers ───────────────────────────────────────────────────
 // Durasi timeout (ms): jika tidak ada data real dalam waktu ini, kembali ke mock
 const REAL_TIMEOUT_MS = 15000;
@@ -7,6 +25,28 @@ const REAL_TIMEOUT_MS = 15000;
 function isFresh(timestamps, key) {
   const ts = timestamps?.[key];
   return ts && (Date.now() - ts) < REAL_TIMEOUT_MS;
+}
+
+function normalizeDetectorStatus(status) {
+  if (status == null) return null;
+  return STATUS_ALIASES[String(status).trim().toUpperCase()] ?? null;
+}
+
+function thresholdStatus(value, warning, danger) {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return null;
+  if (numberValue >= danger) return 'DANGER';
+  if (numberValue >= warning) return 'WARNING';
+  return 'NORMAL';
+}
+
+function binaryDangerStatus(value) {
+  if (value == null) return null;
+  if (typeof value === 'string') {
+    const normalized = normalizeDetectorStatus(value);
+    if (normalized) return normalized;
+  }
+  return Number(value) === 1 ? 'DANGER' : 'NORMAL';
 }
 
 // ── Initial State ─────────────────────────────────────────────
@@ -57,12 +97,9 @@ function reducer(state, action) {
         // Pemetaan untuk sensor baru (env)
         const newThermalTemp = d.max_temp ?? d.thermal_temp;
         const newCo2Ppm = d.mq7_ppm ?? d.co2_ppm;
-        let newUvDetected = state.panelData?.uv_detected ?? 0;
-        if (d.flame_status) {
-          newUvDetected = d.flame_status === 'DANGER' ? 1 : 0;
-        } else if (d.uv_detected !== undefined) {
-          newUvDetected = d.uv_detected;
-        }
+        const hasUvReading = d.uv_detected !== undefined;
+        let newUvDetected = hasUvReading ? d.uv_detected : 0;
+        const explicitFlameStatus = normalizeDetectorStatus(d.flame_status);
 
         newState.panelData = {
           voltage:         isRealACVoltage ? incomingVoltage : (state.panelData?.voltage ?? 220),
@@ -88,6 +125,32 @@ function reducer(state, action) {
           hz:      50,
         };
         newState.energyHistory = [...(state.energyHistory || []).slice(-29), newPoint];
+
+        const explicitSmokeStatus = normalizeDetectorStatus(d.smoke_status);
+        const explicitHeatStatus = normalizeDetectorStatus(d.heat_status);
+        const explicitThermalStatus = normalizeDetectorStatus(d.thermal_status);
+        const smokeFromGas = newCo2Ppm != null ? thresholdStatus(newCo2Ppm, GAS_WARNING, GAS_DANGER) : null;
+        const flameFromUv = hasUvReading || explicitFlameStatus ? binaryDangerStatus(newUvDetected) : null;
+        const heatFromTemp = d.temperature_sht != null
+          ? thresholdStatus(newState.panelData.temperature_sht, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER)
+          : null;
+        const thermalFromTemp = newThermalTemp != null
+          ? thresholdStatus(newState.panelData.thermal_temp, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER)
+          : null;
+        const hasDetectorInput = [
+          explicitSmokeStatus, explicitFlameStatus, explicitHeatStatus, explicitThermalStatus,
+          smokeFromGas, flameFromUv, heatFromTemp, thermalFromTemp,
+        ].some(Boolean);
+
+        if (hasDetectorInput) {
+          rts.detectors = nowMs;
+          newState.detectors = {
+            smoke:   smokeFromGas     ?? explicitSmokeStatus   ?? (state.detectors?.smoke   ?? 'NORMAL'),
+            flame:   flameFromUv      ?? explicitFlameStatus   ?? (state.detectors?.flame   ?? 'NORMAL'),
+            heat:    heatFromTemp     ?? explicitHeatStatus    ?? (state.detectors?.heat    ?? 'NORMAL'),
+            thermal: thermalFromTemp  ?? explicitThermalStatus ?? (state.detectors?.thermal ?? 'NORMAL'),
+          };
+        }
       }
       if (d.node_id === 3) {
         rts.node3 = nowMs;
@@ -101,15 +164,6 @@ function reducer(state, action) {
         newState.node4 = {
           pressure:     d.pressure     ?? (state.node4?.pressure     ?? 0),
           valve_status: d.valve_status ?? (state.node4?.valve_status ?? 'CLOSED'),
-        };
-      }
-      if (d.smoke_status || d.flame_status || d.heat_status || d.thermal_status) {
-        rts.detectors = nowMs;
-        newState.detectors = {
-          smoke:   d.smoke_status   ?? (state.detectors?.smoke   ?? 'NORMAL'),
-          flame:   d.flame_status   ?? (state.detectors?.flame   ?? 'NORMAL'),
-          heat:    d.heat_status    ?? (state.detectors?.heat    ?? 'NORMAL'),
-          thermal: d.thermal_status ?? (state.detectors?.thermal ?? 'NORMAL'),
         };
       }
       if (d.water_level    != null) { rts.water_level    = nowMs; newState.water_level    = d.water_level; }
