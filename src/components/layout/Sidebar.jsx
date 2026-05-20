@@ -6,8 +6,7 @@ import logoBaru from '../../assets/logo.png';
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/kontrol-sensor', icon: Monitor, label: 'Kontrol Sensor' },
-  { to: '/gas-hydrant', icon: Droplets, label: 'Gas & Hydrant' },
+  { to: '/monitoring', icon: Monitor, label: 'Monitoring' },
   { to: '/history', icon: History, label: 'Riwayat Data' },
   { to: '/control', icon: Sliders, label: 'Kontrol' },
 ];

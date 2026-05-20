@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { useEffect, useState } from 'react';
 
 import { SensorProvider, useSensor } from './context/SensorContext';
@@ -7,8 +7,7 @@ import { useSocket } from './hooks/useSocket';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
-import KontrolSensor from './pages/KontrolSensor';
-import GasHydrant from './pages/GasHydrant';
+import Monitoring from './pages/Monitoring';
 import History from './pages/History';
 import Control from './pages/Control';
 
@@ -52,8 +51,7 @@ function InnerApp() {
       <main className={`main-content ${!isSidebarOpen ? 'collapsed' : ''}`}>
         <Routes>
           <Route path="/" element={isWaitingForData ? loadingElement : <Dashboard />} />
-          <Route path="/kontrol-sensor" element={isWaitingForData ? loadingElement : <KontrolSensor />} />
-          <Route path="/gas-hydrant" element={isWaitingForData ? loadingElement : <GasHydrant />} />
+          <Route path="/monitoring" element={isWaitingForData ? loadingElement : <Monitoring />} />
           <Route path="/history" element={<History />} />
           <Route path="/control" element={isWaitingForData ? loadingElement : <Control />} />
         </Routes>
@@ -69,8 +67,11 @@ export default function App() {
         <InnerApp />
         <Toaster
           position="top-right"
+          visibleToasts={5}
+          expand={false}
+          duration={4000}
+          offset="80px"
           toastOptions={{
-            duration: 4000,
             style: {
               background: '#0d1f38',
               color: '#e2e8f0',

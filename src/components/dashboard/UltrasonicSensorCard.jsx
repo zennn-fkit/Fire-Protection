@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Waves, Ruler } from 'lucide-react';
+import Wave from 'react-wavify';
 import HydrantTankStrip from './HydrantTankStrip';
 
 function getLevelColor(level, maxLevel) {
@@ -27,6 +28,7 @@ export default function UltrasonicSensorCard({
   embedded = false,
 }) {
   const resolvedVariant = variant || (compact ? 'compact' : 'default');
+  const isMinimal = resolvedVariant === 'minimal';
 
   if (resolvedVariant === 'strip') {
     return (
@@ -47,8 +49,8 @@ export default function UltrasonicSensorCard({
   const status        = getLevelStatus(clampedLevel, maxDistanceCm);
 
   const isCompact = resolvedVariant === 'compact';
-  const TANK_H = isCompact ? 120 : 180;
-  const TANK_W = isCompact ? 64 : 90;
+  const TANK_H = isCompact ? 120 : (isMinimal ? 160 : 180);
+  const TANK_W = isCompact ? 64 : (isMinimal ? 120 : 90);
   const fillH  = TANK_H * levelPct;
 
   // Ruler tick marks
@@ -101,12 +103,14 @@ export default function UltrasonicSensorCard({
         gap: isCompact ? 12 : 16,
         flex: 1,
         padding: isCompact ? '12px 14px' : '16px 20px 16px',
-        alignItems: isCompact ? 'center' : 'flex-start',
+        alignItems: isCompact ? 'center' : (isMinimal ? 'center' : 'flex-start'),
+        justifyContent: isMinimal ? 'center' : 'flex-start',
       }}>
         {/* Tank Visual */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
 
           {/* Ruler on left */}
+          {!isMinimal && (
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4 }}>
             <svg width="40" height={TANK_H + 8} style={{ overflow: 'visible' }}>
               {ticks.map((t, i) => (
@@ -128,94 +132,94 @@ export default function UltrasonicSensorCard({
               ))}
             </svg>
           </div>
+          )}
 
           {/* Tank cylinder */}
-          <div style={{ position: 'relative' }}>
-            {/* Sonar sensor on top */}
-            <div style={{
-              position: 'absolute', top: -22, left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            }}>
-              <div style={{
-                background: '#1e3a5f', border: '1px solid #3b82f6',
-                borderRadius: 4, padding: '2px 8px',
-                fontSize: 7, color: '#3b82f6', fontWeight: 700, letterSpacing: '0.05em',
-                whiteSpace: 'nowrap',
-              }}>
-                HC-SR04
-              </div>
-              {/* Sensor beam lines */}
-              <div style={{ display: 'flex', gap: 3, height: 8 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: 1, height: 8,
-                    background: `rgba(59,130,246,${0.3 + i * 0.2})`,
-                    borderRadius: 99,
-                    animation: `beam 1.5s ease-in-out ${i * 0.3}s infinite`,
-                  }} />
-                ))}
-              </div>
-            </div>
-
-            {/* Main tank body */}
+          <div style={{ position: 'relative', paddingBottom: 10 }}>
+            {/* Main tank body (Glassmorphism) */}
             <div style={{
               width: TANK_W, height: TANK_H,
-              borderRadius: '4px 4px 10px 10px',
-              border: `2px solid ${levelColor}50`,
-              background: '#040b16',
+              borderRadius: '16px',
+              border: `1px solid rgba(255,255,255,0.15)`,
+              borderTop: `1px solid rgba(255,255,255,0.3)`,
+              background: 'rgba(15, 23, 42, 0.4)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
               overflow: 'hidden',
               position: 'relative',
-              boxShadow: `0 0 20px ${levelColor}20, inset 0 0 20px rgba(0,0,0,0.4)`,
+              boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255,255,255,0.05)`,
             }}>
               {/* Water fill */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: `${levelPct * 100}%`,
-                background: `linear-gradient(180deg, ${levelColor}60 0%, ${levelColor}95 100%)`,
+                background: `linear-gradient(180deg, ${levelColor}90 0%, ${levelColor}D0 100%)`,
                 transition: 'height 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: `inset 0 0 24px ${levelColor}80, 0 -4px 16px ${levelColor}40`,
               }}>
-                {/* Wave surface */}
-                <svg
-                  width={TANK_W} height="16"
-                  viewBox={`0 0 ${TANK_W} 16`}
-                  style={{ position: 'absolute', top: -8, left: 0 }}
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d={`M0 8 Q${TANK_W * 0.25} 0 ${TANK_W * 0.5} 8 Q${TANK_W * 0.75} 16 ${TANK_W} 8 L${TANK_W} 16 L0 16 Z`}
-                    fill={`${levelColor}80`}
-                    style={{ animation: 'wave 3s ease-in-out infinite' }}
+                {/* Dynamic Wave surface */}
+                <div style={{ position: 'absolute', top: -16, left: 0, width: '100%', height: 20, pointerEvents: 'none' }}>
+                  <Wave
+                    fill={levelColor}
+                    paused={false}
+                    options={{
+                      height: 5,
+                      amplitude: 5,
+                      speed: 0.2,
+                      points: 3
+                    }}
+                    style={{ position: 'absolute', top: 0, opacity: 0.9 }}
                   />
-                  <path
-                    d={`M0 10 Q${TANK_W * 0.33} 2 ${TANK_W * 0.66} 10 Q${TANK_W * 0.83} 16 ${TANK_W} 12 L${TANK_W} 16 L0 16 Z`}
-                    fill={`${levelColor}50`}
-                    style={{ animation: 'wave 2.5s ease-in-out 0.5s infinite reverse' }}
+                  <Wave
+                    fill="#ffffff"
+                    paused={false}
+                    options={{
+                      height: 5,
+                      amplitude: 7,
+                      speed: 0.15,
+                      points: 4
+                    }}
+                    style={{ position: 'absolute', top: 4, opacity: 0.2 }}
                   />
-                </svg>
+                </div>
 
-                {/* Bubble particles */}
-                {levelPct > 0.1 && [0.2, 0.5, 0.75].map((xPct, i) => (
-                  <div key={i} style={{
-                    position: 'absolute',
-                    left: `${xPct * 100}%`,
-                    bottom: `${20 + i * 20}%`,
-                    width: 3 + i,
-                    height: 3 + i,
-                    borderRadius: '50%',
-                    background: `${levelColor}60`,
-                    animation: `bubble ${2 + i * 0.7}s ease-in-out ${i * 0.4}s infinite`,
-                  }} />
-                ))}
+                {/* Glowing bubbles */}
+                {levelPct > 0.05 && [0, 1, 2, 3, 4].map((i) => {
+                  const size = 3 + (i % 3);
+                  const leftPct = 20 + (i * 15) % 60;
+                  const delay = i * 0.8;
+                  const dur = 2 + (i % 2);
+                  return (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      left: `${leftPct}%`,
+                      bottom: '-10px',
+                      width: size,
+                      height: size,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.6)',
+                      boxShadow: `0 0 6px rgba(255,255,255,0.8)`,
+                      animation: `bubbleRise ${dur}s ease-in ${delay}s infinite`,
+                      opacity: 0,
+                    }} />
+                  );
+                })}
               </div>
 
-              {/* Distance marker line */}
+              {/* Glass Reflection Overlay */}
               <div style={{
-                position: 'absolute',
-                top: `${(1 - levelPct) * 100}%`,
-                left: 0, right: 0,
-                height: 1,
-                background: `${levelColor}80`,
-                boxShadow: `0 0 4px ${levelColor}`,
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(105deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(0,0,0,0.1) 100%)',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }} />
+              
+              {/* Vertical Light Highlight (creates a glossy 3D cylinder effect) */}
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0, left: '10%', width: '15%',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%)',
+                pointerEvents: 'none',
+                zIndex: 2,
               }} />
 
               {/* Level text overlay */}
@@ -223,33 +227,30 @@ export default function UltrasonicSensorCard({
                 position: 'absolute', inset: 0,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 2,
+                zIndex: 3,
+                pointerEvents: 'none',
               }}>
                 <span style={{
                   fontFamily: "'JetBrains Mono', monospace", fontWeight: 900,
-                  fontSize: 18, color: '#fff',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                  fontSize: isMinimal ? 28 : 22, color: '#fff',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.3)',
                 }}>
-                  {clampedLevel.toFixed(1)}
+                  {isMinimal ? (levelPct * 100).toFixed(1) : clampedLevel.toFixed(1)}
                 </span>
                 <span style={{
-                  fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: 600,
+                  fontSize: isMinimal ? 12 : 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600,
+                  letterSpacing: isMinimal ? '0.1em' : '0.05em',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.8)',
                 }}>
-                  cm
+                  {isMinimal ? '%' : 'cm'}
                 </span>
               </div>
             </div>
-
-            {/* Bottom cap */}
-            <div style={{
-              width: TANK_W, height: 6,
-              background: `${levelColor}30`,
-              border: `2px solid ${levelColor}50`,
-              borderTop: 'none', borderRadius: '0 0 8px 8px',
-            }} />
           </div>
         </div>
 
         {/* Right: Info panel */}
+        {!isMinimal && (
         <div style={{
           flex: 1,
           width: isCompact ? '100%' : undefined,
@@ -335,12 +336,18 @@ export default function UltrasonicSensorCard({
             </div>
           )}
         </div>
+        )}
       </div>
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes wave { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-8px)} }
-        @keyframes bubble { 0%{transform:translateY(0);opacity:0.7} 100%{transform:translateY(-40px);opacity:0} }
+        @keyframes waveScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes bubbleRise { 
+          0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; } 
+          20% { opacity: 1; } 
+          80% { opacity: 0.8; }
+          100% { transform: translateY(-${TANK_H * 0.8}px) translateX(-10px) scale(1.5); opacity: 0; } 
+        }
         @keyframes beam { 0%,100%{opacity:0.2;height:8px} 50%{opacity:1;height:12px} }
       `}</style>
     </div>

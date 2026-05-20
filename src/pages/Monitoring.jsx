@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { useSensor } from '../context/SensorContext';
 import Header from '../components/layout/Header';
+
+// Components from KontrolSensor
+import GaugeCard from '../components/dashboard/GaugeCard';
+import SensorStatusCard from '../components/dashboard/SensorStatusCard';
+import { ZONE_DEFAULT } from '../utils/gaugeZones';
+
+// Components from GasHydrant
 import GasPanel from '../components/dashboard/GasPanel';
 import HydrantPanel from '../components/dashboard/HydrantPanel';
 import WaterTankPanel from '../components/dashboard/WaterTankPanel';
 import PressureSensorCard from '../components/dashboard/PressureSensorCard';
 import UltrasonicSensorCard from '../components/dashboard/UltrasonicSensorCard';
 import TankConfigPanel from '../components/dashboard/TankConfigPanel';
-import { Flame, Droplets, Gauge, Waves, Settings } from 'lucide-react';
+import { Flame, Droplets, Gauge, Waves, Settings, Thermometer } from 'lucide-react';
 
 const TAB_STYLE = (active) => ({
   flex: 1,
@@ -22,6 +29,10 @@ const TAB_STYLE = (active) => ({
   letterSpacing: '0.05em',
   cursor: 'pointer',
   transition: 'all 0.3s',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 8,
 });
 
 const SUBTAB_STYLE = (active) => ({
@@ -41,33 +52,86 @@ const SUBTAB_STYLE = (active) => ({
   gap: 6,
 });
 
-export default function GasHydrant() {
+export default function Monitoring() {
   const { state } = useSensor();
-  const { panelData, node4, water_level, water_pressure, water_distance } = state;
-  const [activeTab, setActiveTab] = useState('gas');
-  const [hydrantSubTab, setHydrantSubTab] = useState('overview');
+  const { panelData, node4, water_level, water_pressure, water_distance, detectors } = state;
+  const [activeTab, setActiveTab] = useState('environment'); // Default tab
+  
+  // Sub-tabs
   const [gasSubTab, setGasSubTab] = useState('overview');
+  const [hydrantSubTab, setHydrantSubTab] = useState('overview');
 
   // Hitung ketinggian air (cm) dari jarak ultrasonik
-  // water_distance = jarak sensor ke permukaan (cm), maxDistanceCm default 200
   const MAX_DIST_CM = 200;
   const waterLevelCm = water_distance != null ? Math.max(0, MAX_DIST_CM - water_distance) : null;
 
   return (
     <div className="page-gradient" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header title="Gas & Hydrant Monitoring" />
+      <Header title="Monitoring Area" />
 
       <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
 
         {/* Main Tab Navigation */}
         <div style={{ display: 'flex', borderBottom: '1px solid #1a3558' }}>
+          <button onClick={() => setActiveTab('environment')} style={TAB_STYLE(activeTab === 'environment')}>
+            <Thermometer size={16} /> Lingkungan
+          </button>
           <button onClick={() => setActiveTab('gas')} style={TAB_STYLE(activeTab === 'gas')}>
-            🔥 Smart Gas
+            <Flame size={16} /> Smart Gas
           </button>
           <button onClick={() => setActiveTab('hydrant')} style={TAB_STYLE(activeTab === 'hydrant')}>
-            🚒 Hydrant
+            <Droplets size={16} /> Hydrant
           </button>
         </div>
+
+        {/* ── ENVIRONMENT TAB (Lama: Kontrol Sensor) ── */}
+        {activeTab === 'environment' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {panelData ? (
+              <>
+                <GaugeCard
+                  label="Suhu SHT" value={panelData.temperature_sht} min={0} max={100}
+                  unit="°C" threshKey="temperature_sht" decimals={2}
+                  zones={ZONE_DEFAULT}
+                />
+                <GaugeCard
+                  label="Kelembaban" value={panelData.humidity} min={0} max={100}
+                  unit="%" threshKey="humidity" decimals={2}
+                  zones={ZONE_DEFAULT}
+                />
+                <GaugeCard
+                  label="Thermal" value={panelData.thermal_temp} min={0} max={100}
+                  unit="°C" threshKey="thermal_temp" decimals={2}
+                  zones={ZONE_DEFAULT}
+                />
+                <GaugeCard
+                  label="CO2 Carbon" value={panelData.co2_ppm} min={0} max={2}
+                  unit="ppm" threshKey="co2_ppm" decimals={3}
+                  zones={ZONE_DEFAULT}
+                />
+                <GaugeCard
+                  label="UV" 
+                  value={panelData.uv_detected} 
+                  displayValue={panelData.uv_detected ? 'Terdeteksi' : 'Tidak Terdeteksi'}
+                  min={0} max={1}
+                  unit="Status" threshKey="uv_detected" decimals={0}
+                  zones={ZONE_DEFAULT}
+                />
+              </>
+            ) : (
+              <div style={{ gridColumn: 'span 3', color: '#94a3b8', textAlign: 'center', padding: '40px 0' }}>
+                Menunggu data sensor...
+              </div>
+            )}
+
+            {/* Panel Status Detektor Kebakaran */}
+            {detectors && (
+              <div style={{ gridColumn: 'span 3', marginTop: 8 }}>
+                <SensorStatusCard detectors={detectors} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── GAS TAB ── */}
         {activeTab === 'gas' && (
@@ -75,12 +139,10 @@ export default function GasHydrant() {
             {/* Sub-tab Navigation */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => setGasSubTab('overview')} style={SUBTAB_STYLE(gasSubTab === 'overview')}>
-                <Flame size={13} />
-                Overview
+                <Flame size={13} /> Overview
               </button>
               <button onClick={() => setGasSubTab('pressure')} style={SUBTAB_STYLE(gasSubTab === 'pressure')}>
-                <Gauge size={13} />
-                Pressure Sensor
+                <Gauge size={13} /> Pressure Sensor
               </button>
             </div>
 
@@ -125,7 +187,6 @@ export default function GasHydrant() {
             {/* ── Pressure Sensor sub-tab ── */}
             {gasSubTab === 'pressure' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-                {/* Info banner */}
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: 10,
@@ -146,7 +207,6 @@ export default function GasHydrant() {
                   </div>
                 </div>
 
-                {/* Main pressure gauge */}
                 <PressureSensorCard
                   pressure={panelData?.gas_pressure ?? 0}
                   maxPressure={12}
@@ -162,31 +222,25 @@ export default function GasHydrant() {
         {/* ── HYDRANT TAB ── */}
         {activeTab === 'hydrant' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
             {/* Sub-tab Navigation */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => setHydrantSubTab('overview')} style={SUBTAB_STYLE(hydrantSubTab === 'overview')}>
-                <Droplets size={13} />
-                Overview
+                <Droplets size={13} /> Overview
               </button>
               <button onClick={() => setHydrantSubTab('pressure')} style={SUBTAB_STYLE(hydrantSubTab === 'pressure')}>
-                <Gauge size={13} />
-                Pressure Sensor
+                <Gauge size={13} /> Pressure Sensor
               </button>
               <button onClick={() => setHydrantSubTab('ultrasonic')} style={SUBTAB_STYLE(hydrantSubTab === 'ultrasonic')}>
-                <Waves size={13} />
-                Ultrasonik
+                <Waves size={13} /> Ultrasonik
               </button>
               <button onClick={() => setHydrantSubTab('config')} style={SUBTAB_STYLE(hydrantSubTab === 'config')}>
-                <Settings size={13} />
-                Konfigurasi Tangki
+                <Settings size={13} /> Konfigurasi Tangki
               </button>
             </div>
 
             {/* ── Overview sub-tab ── */}
             {hydrantSubTab === 'overview' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-                {/* Hydrant Pressure Gauge */}
                 {node4 ? (
                   <HydrantPanel
                     pressure={node4.pressure}
@@ -197,12 +251,9 @@ export default function GasHydrant() {
                   <HydrantPanel pressure={0} valve_status="CLOSED" maxPressure={12} />
                 )}
 
-                {/* Water Tank Level */}
                 <WaterTankPanel level={water_level !== null ? water_level : 0} />
 
-                {/* Quick summary cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  {/* Pressure summary */}
                   <div className="card" style={{ padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <Gauge size={14} color="#3b82f6" />
@@ -219,7 +270,6 @@ export default function GasHydrant() {
                     </div>
                   </div>
 
-                  {/* Ultrasonic summary */}
                   <div className="card" style={{ padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <Waves size={14} color="#38bdf8" />
@@ -228,9 +278,7 @@ export default function GasHydrant() {
                       </span>
                     </div>
                     <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 900, color: '#38bdf8' }}>
-                      {water_distance !== null
-                        ? (200 - water_distance).toFixed(1)
-                        : '—'}
+                      {water_distance !== null ? (200 - water_distance).toFixed(1) : '—'}
                     </div>
                     <div style={{ fontSize: 9, color: '#475569', fontWeight: 600, marginTop: 2 }}>cm</div>
                     <div style={{ fontSize: 8, color: '#64748b', marginTop: 4 }}>
@@ -239,7 +287,6 @@ export default function GasHydrant() {
                   </div>
                 </div>
 
-                {/* Schematic */}
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 150 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 12px 0 12px' }}>
                     FIELD SCHEMATIC / LIVE
@@ -268,7 +315,6 @@ export default function GasHydrant() {
             {/* ── Pressure Sensor sub-tab ── */}
             {hydrantSubTab === 'pressure' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-                {/* Info banner */}
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: 10,
@@ -289,14 +335,12 @@ export default function GasHydrant() {
                   </div>
                 </div>
 
-                {/* Main pressure gauge */}
                 <PressureSensorCard
                   pressure={water_pressure !== null ? water_pressure : 0}
                   maxPressure={10}
                   title="Tekanan Air Hydrant"
                 />
 
-                {/* Additional hydrant pressure gauge (node4) */}
                 <div className="card" style={{ padding: '16px' }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                     📊 Perbandingan Tekanan
@@ -351,7 +395,6 @@ export default function GasHydrant() {
             {/* ── Ultrasonic sub-tab ── */}
             {hydrantSubTab === 'ultrasonic' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
-                {/* Info banner */}
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: 10,
@@ -372,14 +415,12 @@ export default function GasHydrant() {
                   </div>
                 </div>
 
-                {/* Main ultrasonic card */}
                 <UltrasonicSensorCard
                   distanceCm={water_distance !== null ? water_distance : 100}
                   maxDistanceCm={200}
                   title="Level Air Tangki Hydrant"
                 />
 
-                {/* Also show simple water level percentage from WaterTank sensor */}
                 <WaterTankPanel level={water_level !== null ? water_level : 0} />
               </div>
             )}

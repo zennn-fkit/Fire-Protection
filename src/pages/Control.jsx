@@ -3,7 +3,7 @@ import { Droplets, Bell, Waves, Power, Clock, User } from 'lucide-react';
 import { useSensor } from '../context/SensorContext';
 import { getControl, postControl } from '../utils/api';
 import Header from '../components/layout/Header';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const DEVICES = [
   {
