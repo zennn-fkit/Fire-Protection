@@ -37,7 +37,7 @@ const DEVICES = [
 
 function ControlCard({ device, currentStatus, onToggle, loading, logs }) {
   const { key, label, icon: Icon, color, onStatus, offStatus, onLabel, offLabel, desc } = device;
-  const isOn     = currentStatus === onStatus;
+  const isOn = currentStatus === onStatus;
   const lastLogs = (logs || []).filter(l => l.device === key).slice(0, 4);
 
   return (
@@ -146,7 +146,7 @@ function ControlCard({ device, currentStatus, onToggle, loading, logs }) {
 
 export default function Control() {
   const { state, controlUpdate } = useSensor();
-  const [logs,    setLogs]    = useState([]);
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
@@ -157,9 +157,9 @@ export default function Control() {
       .catch(() => {
         // Demo logs
         setLogs([
-          { device: 'SPRINKLER', status: 'OFF',    triggered_by: 'MANUAL', timestamp: new Date(Date.now()-3600000) },
-          { device: 'ALARM',     status: 'OFF',    triggered_by: 'AUTO',   timestamp: new Date(Date.now()-7200000) },
-          { device: 'VALVE',     status: 'CLOSED', triggered_by: 'MANUAL', timestamp: new Date(Date.now()-1800000) },
+          { device: 'SPRINKLER', status: 'OFF', triggered_by: 'MANUAL', timestamp: new Date(Date.now() - 3600000) },
+          { device: 'ALARM', status: 'OFF', triggered_by: 'AUTO', timestamp: new Date(Date.now() - 7200000) },
+          { device: 'VALVE', status: 'CLOSED', triggered_by: 'MANUAL', timestamp: new Date(Date.now() - 1800000) },
         ]);
       });
   }, []);
@@ -231,7 +231,7 @@ export default function Control() {
                     <td style={{ color: '#e2e8f0', fontWeight: 600 }}>{log.device}</td>
                     <td>
                       <span style={{
-                        color: ['ON','OPEN'].includes(log.status) ? '#10b981' : '#ef4444',
+                        color: ['ON', 'OPEN'].includes(log.status) ? '#10b981' : '#ef4444',
                         fontWeight: 700,
                       }}>{log.status}</span>
                     </td>

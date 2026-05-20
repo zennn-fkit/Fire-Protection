@@ -1,9 +1,9 @@
 import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 const STATUS_MAP = {
-  NORMAL:  { icon: CheckCircle,   color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)', label: 'Aman'   },
-  WARNING: { icon: AlertTriangle, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.3)',  label: 'Waspada'},
-  DANGER:  { icon: XCircle,       color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.4)',   label: 'Bahaya' },
+  NORMAL: { icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', label: 'Aman' },
+  WARNING: { icon: AlertTriangle, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', label: 'Waspada' },
+  DANGER: { icon: XCircle, color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.4)', label: 'Bahaya' },
 };
 
 function DetectorItem({ label, status, sub }) {
@@ -33,10 +33,10 @@ export default function SensorStatusCard({ detectors }) {
         Status Detektor Kebakaran
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flex: 1, alignContent: 'stretch' }}>
-        <DetectorItem label="Smoke Detector" status={detectors.smoke}   sub="Detektor Asap"    />
-        <DetectorItem label="Heat Detector"  status={detectors.heat}    sub="Heat Acc: ±0.3°C" />
-        <DetectorItem label="Flame Detector" status={detectors.flame}   sub="Detektor Api"     />
-        <DetectorItem label="Thermal Sensor" status={detectors.thermal} sub="Heat Acc: ±2.5%"  />
+        <DetectorItem label="Smoke Detector" status={detectors.smoke} sub="Detektor Asap" />
+        <DetectorItem label="Heat Detector" status={detectors.heat} sub="Heat Acc: ±0.3°C" />
+        <DetectorItem label="Flame Detector" status={detectors.flame} sub="Detektor Api" />
+        <DetectorItem label="Thermal Sensor" status={detectors.thermal} sub="Heat Acc: ±2.5%" />
       </div>
     </div>
   );

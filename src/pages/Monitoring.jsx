@@ -56,7 +56,7 @@ export default function Monitoring() {
   const { state } = useSensor();
   const { panelData, node4, water_level, water_pressure, water_distance, detectors } = state;
   const [activeTab, setActiveTab] = useState('environment'); // Default tab
-  
+
   // Sub-tabs
   const [gasSubTab, setGasSubTab] = useState('overview');
   const [hydrantSubTab, setHydrantSubTab] = useState('overview');
@@ -110,8 +110,8 @@ export default function Monitoring() {
                   zones={ZONE_DEFAULT}
                 />
                 <GaugeCard
-                  label="UV" 
-                  value={panelData.uv_detected} 
+                  label="UV"
+                  value={panelData.uv_detected}
                   displayValue={panelData.uv_detected ? 'Terdeteksi' : 'Tidak Terdeteksi'}
                   min={0} max={1}
                   unit="Status" threshKey="uv_detected" decimals={0}

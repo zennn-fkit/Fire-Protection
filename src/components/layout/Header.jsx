@@ -13,7 +13,7 @@ export default function Header({ title }) {
   }, []);
 
   const criticalAlerts = state.alerts.filter(a => a.severity === 'CRITICAL');
-  const allAlerts      = state.alerts.slice(0, 8);
+  const allAlerts = state.alerts.slice(0, 8);
 
   return (
     <header className="header">

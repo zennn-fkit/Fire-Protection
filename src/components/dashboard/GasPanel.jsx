@@ -12,31 +12,31 @@ function ptc(cx, cy, r, deg) {
 function arcD(r, startDeg, endDeg, cx = CX, cy = CY) {
   const [sx, sy] = ptc(cx, cy, r, startDeg);
   const [ex, ey] = ptc(cx, cy, r, endDeg);
-  const span  = ((endDeg - startDeg) + 360) % 360;
+  const span = ((endDeg - startDeg) + 360) % 360;
   const large = span > 180 ? 1 : 0;
   return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
 }
 
 const VALVE_STATUS = {
-  OPEN:   { color: '#10b981', label: 'TERBUKA',  bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)'  },
+  OPEN: { color: '#10b981', label: 'TERBUKA', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
   CLOSED: { color: '#f87171', label: 'TERTUTUP', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.3)' },
 };
 
-export default function GasPanel({ 
-  title = "Smart Gas Monitoring", 
-  pressure = 0, 
-  valve_status = 'CLOSED', 
+export default function GasPanel({
+  title = "Smart Gas Monitoring",
+  pressure = 0,
+  valve_status = 'CLOSED',
   maxPressure = 400,
   icon: Icon = Wind,
   iconColor = "#10b981", // Emerald
   valveLabel = "Status Katup"
 }) {
-  const vs  = VALVE_STATUS[valve_status] || VALVE_STATUS.CLOSED;
+  const vs = VALVE_STATUS[valve_status] || VALVE_STATUS.CLOSED;
   // For negative values or high pressure, we need a scale. The mock data in image is -302 Bar. Let's just map it generically.
   // We'll assume the pressure is absolute value for the gauge filling, but displayed as is.
   const absPressure = Math.abs(pressure);
   const pct = Math.max(0, Math.min(1, absPressure / maxPressure));
-  
+
   // Color scale for gas: green -> orange -> red based on pct
   const pressColor = pct > 0.8 ? '#f87171' : pct > 0.5 ? '#f59e0b' : '#10b981';
 
@@ -90,13 +90,13 @@ export default function GasPanel({
           <div style={{ fontSize: 10, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, fontWeight: 700 }}>
             Tekanan Gas
           </div>
-          
+
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
             <svg width="250" height="250" viewBox="0 10 150 110" style={{ overflow: 'visible' }}>
               <defs>
                 <filter id="gas-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
-                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b" />
+                  <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
                 <linearGradient id="gas-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor={pressColor} stopOpacity="0.6" />

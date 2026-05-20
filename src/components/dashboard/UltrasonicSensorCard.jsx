@@ -14,9 +14,9 @@ function getLevelColor(level, maxLevel) {
 function getLevelStatus(level, maxLevel) {
   const pct = level / maxLevel;
   if (pct < 0.15) return { label: 'KRITIS RENDAH', color: '#ef4444' };
-  if (pct < 0.30) return { label: 'AIR RENDAH',    color: '#f59e0b' };
-  if (pct < 0.85) return { label: 'NORMAL',         color: '#3b82f6' };
-  return             { label: 'HAMPIR PENUH',   color: '#f59e0b' };
+  if (pct < 0.30) return { label: 'AIR RENDAH', color: '#f59e0b' };
+  if (pct < 0.85) return { label: 'NORMAL', color: '#3b82f6' };
+  return { label: 'HAMPIR PENUH', color: '#f59e0b' };
 }
 
 export default function UltrasonicSensorCard({
@@ -42,16 +42,16 @@ export default function UltrasonicSensorCard({
   }
   // distanceCm = jarak pantulan sonar (makin kecil = air makin tinggi)
   // waterLevelCm = ketinggian air = max - jarak
-  const waterLevelCm  = Math.max(0, maxDistanceCm - distanceCm);
-  const clampedLevel  = Math.max(0, Math.min(maxDistanceCm, waterLevelCm));
-  const levelPct      = clampedLevel / maxDistanceCm;   // 0..1
-  const levelColor    = getLevelColor(clampedLevel, maxDistanceCm);
-  const status        = getLevelStatus(clampedLevel, maxDistanceCm);
+  const waterLevelCm = Math.max(0, maxDistanceCm - distanceCm);
+  const clampedLevel = Math.max(0, Math.min(maxDistanceCm, waterLevelCm));
+  const levelPct = clampedLevel / maxDistanceCm;   // 0..1
+  const levelColor = getLevelColor(clampedLevel, maxDistanceCm);
+  const status = getLevelStatus(clampedLevel, maxDistanceCm);
 
   const isCompact = resolvedVariant === 'compact';
   const TANK_H = isCompact ? 120 : (isMinimal ? 160 : 180);
   const TANK_W = isCompact ? 64 : (isMinimal ? 120 : 90);
-  const fillH  = TANK_H * levelPct;
+  const fillH = TANK_H * levelPct;
 
   // Ruler tick marks
   const ticks = useMemo(() => {
@@ -111,27 +111,27 @@ export default function UltrasonicSensorCard({
 
           {/* Ruler on left */}
           {!isMinimal && (
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4 }}>
-            <svg width="40" height={TANK_H + 8} style={{ overflow: 'visible' }}>
-              {ticks.map((t, i) => (
-                <g key={i}>
-                  <line
-                    x1={t.isMajor ? 12 : 18} y1={t.y + 4}
-                    x2={30} y2={t.y + 4}
-                    stroke={t.isMajor ? '#334155' : '#1e2f47'}
-                    strokeWidth={t.isMajor ? '1' : '0.6'}
-                  />
-                  {t.isMajor && (
-                    <text x="8" y={t.y + 7} textAnchor="end"
-                      fill="#475569" fontSize="6" fontFamily="'JetBrains Mono', monospace"
-                    >
-                      {t.val}
-                    </text>
-                  )}
-                </g>
-              ))}
-            </svg>
-          </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: 4 }}>
+              <svg width="40" height={TANK_H + 8} style={{ overflow: 'visible' }}>
+                {ticks.map((t, i) => (
+                  <g key={i}>
+                    <line
+                      x1={t.isMajor ? 12 : 18} y1={t.y + 4}
+                      x2={30} y2={t.y + 4}
+                      stroke={t.isMajor ? '#334155' : '#1e2f47'}
+                      strokeWidth={t.isMajor ? '1' : '0.6'}
+                    />
+                    {t.isMajor && (
+                      <text x="8" y={t.y + 7} textAnchor="end"
+                        fill="#475569" fontSize="6" fontFamily="'JetBrains Mono', monospace"
+                      >
+                        {t.val}
+                      </text>
+                    )}
+                  </g>
+                ))}
+              </svg>
+            </div>
           )}
 
           {/* Tank cylinder */}
@@ -213,7 +213,7 @@ export default function UltrasonicSensorCard({
                 pointerEvents: 'none',
                 zIndex: 2,
               }} />
-              
+
               {/* Vertical Light Highlight (creates a glossy 3D cylinder effect) */}
               <div style={{
                 position: 'absolute', top: 0, bottom: 0, left: '10%', width: '15%',
@@ -251,91 +251,91 @@ export default function UltrasonicSensorCard({
 
         {/* Right: Info panel */}
         {!isMinimal && (
-        <div style={{
-          flex: 1,
-          width: isCompact ? '100%' : undefined,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: isCompact ? 8 : 10,
-          paddingTop: isCompact ? 0 : 4,
-        }}>
-          {/* Status pill */}
           <div style={{
-            padding: '6px 12px', borderRadius: 8,
-            backgroundColor: `${status.color}15`,
-            border: `1px solid ${status.color}30`,
-            display: 'flex', alignItems: 'center', gap: 6,
+            flex: 1,
+            width: isCompact ? '100%' : undefined,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isCompact ? 8 : 10,
+            paddingTop: isCompact ? 0 : 4,
           }}>
+            {/* Status pill */}
             <div style={{
-              width: 6, height: 6, borderRadius: '50%',
-              backgroundColor: status.color,
-              boxShadow: `0 0 6px ${status.color}`,
-            }} />
-            <span style={{ fontSize: 9, color: status.color, fontWeight: 800, letterSpacing: '0.06em' }}>
-              {status.label}
-            </span>
-          </div>
-
-          {/* Metrics */}
-          <div style={{
-            display: isCompact ? 'grid' : 'contents',
-            gridTemplateColumns: isCompact ? '1fr 1fr' : undefined,
-            gap: isCompact ? 6 : undefined,
-          }}>
-          {[
-            { label: 'Ketinggian Air', value: `${clampedLevel.toFixed(1)} cm`, color: levelColor },
-            { label: 'Jarak Sonar', value: `${distanceCm.toFixed(1)} cm`, color: '#94a3b8' },
-            { label: 'Kapasitas', value: `${(levelPct * 100).toFixed(1)}%`, color: levelColor },
-            { label: 'Max Tangki', value: `${maxDistanceCm} cm`, color: '#64748b' },
-          ].map(m => (
-            <div key={m.label} style={{
-              padding: isCompact ? '6px 8px' : '8px 10px', borderRadius: 8,
-              marginBottom: isCompact ? 0 : 10,
-              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(26,53,88,0.5)',
-            }}>
-              <div style={{ fontSize: 8, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
-                {m.label}
-              </div>
-              <div style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: isCompact ? 13 : 16, fontWeight: 800, color: m.color,
-              }}>
-                {m.value}
-              </div>
-            </div>
-          ))}
-          </div>
-
-          {/* Progress bar */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 8, color: '#475569', fontWeight: 600 }}>LEVEL</span>
-              <span style={{ fontSize: 8, color: levelColor, fontWeight: 700 }}>{(levelPct * 100).toFixed(0)}%</span>
-            </div>
-            <div style={{ height: 6, background: '#0d1f38', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: 99,
-                width: `${levelPct * 100}%`,
-                background: `linear-gradient(90deg, #1d4ed8, ${levelColor})`,
-                transition: 'width 1.2s ease',
-                boxShadow: `0 0 8px ${levelColor}60`,
-              }} />
-            </div>
-          </div>
-
-          {!isCompact && (
-            <div style={{
+              padding: '6px 12px', borderRadius: 8,
+              backgroundColor: `${status.color}15`,
+              border: `1px solid ${status.color}30`,
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 10px', borderRadius: 6,
-              background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)',
             }}>
-              <Ruler size={12} color="#38bdf8" />
-              <span style={{ fontSize: 8, color: '#64748b' }}>
-                Mengukur dari atas tangki ke permukaan air
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                backgroundColor: status.color,
+                boxShadow: `0 0 6px ${status.color}`,
+              }} />
+              <span style={{ fontSize: 9, color: status.color, fontWeight: 800, letterSpacing: '0.06em' }}>
+                {status.label}
               </span>
             </div>
-          )}
-        </div>
+
+            {/* Metrics */}
+            <div style={{
+              display: isCompact ? 'grid' : 'contents',
+              gridTemplateColumns: isCompact ? '1fr 1fr' : undefined,
+              gap: isCompact ? 6 : undefined,
+            }}>
+              {[
+                { label: 'Ketinggian Air', value: `${clampedLevel.toFixed(1)} cm`, color: levelColor },
+                { label: 'Jarak Sonar', value: `${distanceCm.toFixed(1)} cm`, color: '#94a3b8' },
+                { label: 'Kapasitas', value: `${(levelPct * 100).toFixed(1)}%`, color: levelColor },
+                { label: 'Max Tangki', value: `${maxDistanceCm} cm`, color: '#64748b' },
+              ].map(m => (
+                <div key={m.label} style={{
+                  padding: isCompact ? '6px 8px' : '8px 10px', borderRadius: 8,
+                  marginBottom: isCompact ? 0 : 10,
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(26,53,88,0.5)',
+                }}>
+                  <div style={{ fontSize: 8, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+                    {m.label}
+                  </div>
+                  <div style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: isCompact ? 13 : 16, fontWeight: 800, color: m.color,
+                  }}>
+                    {m.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Progress bar */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 8, color: '#475569', fontWeight: 600 }}>LEVEL</span>
+                <span style={{ fontSize: 8, color: levelColor, fontWeight: 700 }}>{(levelPct * 100).toFixed(0)}%</span>
+              </div>
+              <div style={{ height: 6, background: '#0d1f38', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99,
+                  width: `${levelPct * 100}%`,
+                  background: `linear-gradient(90deg, #1d4ed8, ${levelColor})`,
+                  transition: 'width 1.2s ease',
+                  boxShadow: `0 0 8px ${levelColor}60`,
+                }} />
+              </div>
+            </div>
+
+            {!isCompact && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 10px', borderRadius: 6,
+                background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)',
+              }}>
+                <Ruler size={12} color="#38bdf8" />
+                <span style={{ fontSize: 8, color: '#64748b' }}>
+                  Mengukur dari atas tangki ke permukaan air
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
