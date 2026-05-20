@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, History, Sliders, Flame, Bell, ChevronLeft, ChevronRight, Droplets } from 'lucide-react';
+import { LayoutDashboard, History, Sliders, Flame, Bell, ChevronLeft, ChevronRight, Droplets, Monitor } from 'lucide-react';
 import { useSensor } from '../../context/SensorContext';
 import logoBaru from '../../assets/logo.png';
 
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/kontrol-sensor', icon: Sliders, label: 'Kontrol Sensor' },
+  { to: '/kontrol-sensor', icon: Monitor, label: 'Kontrol Sensor' },
   { to: '/gas-hydrant', icon: Droplets, label: 'Gas & Hydrant' },
   { to: '/history', icon: History, label: 'Riwayat Data' },
   { to: '/control', icon: Sliders, label: 'Kontrol' },

@@ -23,7 +23,7 @@ export default function MonitoringRealtimePanel({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: hasChart ? 'minmax(0, 1fr) minmax(240px, 32%)' : '1fr',
+          gridTemplateColumns: hasChart ? 'minmax(0, 1.2fr) minmax(360px, 1fr)' : '1fr',
           gap: hasChart ? 16 : 0,
           alignItems: 'stretch',
         }}
@@ -34,12 +34,12 @@ export default function MonitoringRealtimePanel({
             data={energyHistory}
             title={chartTitle}
             initialMetric="kw"
-            chartHeight={148}
+            chartHeight={200}
           />
         )}
 
         <UltrasonicSensorCard
-          variant="strip"
+          variant="default"
           embedded
           distanceCm={waterDistance !== null ? waterDistance : maxTankCm * 0.313}
           maxDistanceCm={maxTankCm}

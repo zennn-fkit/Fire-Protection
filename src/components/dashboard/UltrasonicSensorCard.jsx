@@ -65,12 +65,12 @@ export default function UltrasonicSensorCard({
   }, [maxDistanceCm]);
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+    <div className={embedded ? "" : "card"} style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, borderLeft: embedded ? '1px solid rgba(56,189,248,0.12)' : 'none' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '12px 16px 8px',
-        borderBottom: '1px solid rgba(26,53,88,0.6)',
+        borderBottom: embedded ? 'none' : '1px solid rgba(26,53,88,0.6)',
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: 8,
