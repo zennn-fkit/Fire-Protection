@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useEffect, useState } from 'react';
+import { LayoutGroup } from 'framer-motion';
 
 import { SensorProvider, useSensor } from './context/SensorContext';
 import { useSocket } from './hooks/useSocket';
@@ -49,12 +50,14 @@ function InnerApp() {
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
       <main className={`main-content ${!isSidebarOpen ? 'collapsed' : ''}`}>
-        <Routes>
-          <Route path="/" element={isWaitingForData ? loadingElement : <Dashboard />} />
-          <Route path="/monitoring" element={isWaitingForData ? loadingElement : <Monitoring />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/control" element={isWaitingForData ? loadingElement : <Control />} />
-        </Routes>
+        <LayoutGroup>
+          <Routes>
+            <Route path="/" element={isWaitingForData ? loadingElement : <Dashboard />} />
+            <Route path="/monitoring" element={isWaitingForData ? loadingElement : <Monitoring />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/control" element={isWaitingForData ? loadingElement : <Control />} />
+          </Routes>
+        </LayoutGroup>
       </main>
     </div>
   );

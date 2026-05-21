@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSensor } from '../context/SensorContext';
 import Header from '../components/layout/Header';
 
@@ -21,19 +22,35 @@ const TAB_STYLE = (active) => ({
   padding: '12px 0',
   background: 'transparent',
   border: 'none',
-  borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
+  borderBottom: '2px solid transparent',
   color: active ? '#e2e8f0' : '#64748b',
   fontSize: 12,
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
   cursor: 'pointer',
-  transition: 'all 0.3s',
+  transition: 'color 0.3s',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
   gap: 8,
+  position: 'relative',
 });
+
+const contentVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.07 } },
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 20, scale: 0.97 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+};
 
 const SUBTAB_STYLE = (active) => ({
   padding: '7px 16px',
@@ -72,51 +89,48 @@ export default function Monitoring() {
       <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
 
         {/* Main Tab Navigation */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #1a3558' }}>
-          <button onClick={() => setActiveTab('environment')} style={TAB_STYLE(activeTab === 'environment')}>
-            <Thermometer size={16} /> Lingkungan
-          </button>
-          <button onClick={() => setActiveTab('gas')} style={TAB_STYLE(activeTab === 'gas')}>
-            <Flame size={16} /> Smart Gas
-          </button>
-          <button onClick={() => setActiveTab('hydrant')} style={TAB_STYLE(activeTab === 'hydrant')}>
-            <Droplets size={16} /> Hydrant
-          </button>
+        <div style={{ display: 'flex', borderBottom: '1px solid #1a3558', position: 'relative' }}>
+          {[{ key: 'environment', icon: Thermometer, label: 'Lingkungan' },
+            { key: 'gas', icon: Flame, label: 'Smart Gas' },
+            { key: 'hydrant', icon: Droplets, label: 'Hydrant' }].map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={TAB_STYLE(activeTab === tab.key)}>
+                <Icon size={16} /> {tab.label}
+                {activeTab === tab.key && (
+                  <motion.div
+                    layoutId="monitoring-tab-indicator"
+                    style={{
+                      position: 'absolute', bottom: -1, left: 0, right: 0, height: 2,
+                      background: 'linear-gradient(90deg, #6366F1, #3b82f6)',
+                      borderRadius: 2,
+                    }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── ENVIRONMENT TAB (Lama: Kontrol Sensor) ── */}
+        <AnimatePresence mode="wait">
         {activeTab === 'environment' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <motion.div key="env" variants={contentVariants} initial="initial" animate="animate" exit="exit">
+          <motion.div variants={staggerContainer} initial="initial" animate="animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {panelData ? (
               <>
-                <GaugeCard
-                  label="Suhu SHT" value={panelData.temperature_sht} min={0} max={100}
-                  unit="°C" threshKey="temperature_sht" decimals={2}
-                  zones={ZONE_DEFAULT}
-                />
-                <GaugeCard
-                  label="Kelembaban" value={panelData.humidity} min={0} max={100}
-                  unit="%" threshKey="humidity" decimals={2}
-                  zones={ZONE_DEFAULT}
-                />
-                <GaugeCard
-                  label="Thermal" value={panelData.thermal_temp} min={0} max={100}
-                  unit="°C" threshKey="thermal_temp" decimals={2}
-                  zones={ZONE_DEFAULT}
-                />
-                <GaugeCard
-                  label="CO2 Carbon" value={panelData.co2_ppm} min={0} max={2}
-                  unit="ppm" threshKey="co2_ppm" decimals={3}
-                  zones={ZONE_DEFAULT}
-                />
-                <GaugeCard
-                  label="UV"
-                  value={panelData.uv_detected}
-                  displayValue={panelData.uv_detected ? 'Terdeteksi' : 'Tidak Terdeteksi'}
-                  min={0} max={1}
-                  unit="Status" threshKey="uv_detected" decimals={0}
-                  zones={ZONE_DEFAULT}
-                />
+                {[
+                  { label: 'Suhu SHT', value: panelData.temperature_sht, min: 0, max: 100, unit: '°C', threshKey: 'temperature_sht', decimals: 2 },
+                  { label: 'Kelembaban', value: panelData.humidity, min: 0, max: 100, unit: '%', threshKey: 'humidity', decimals: 2 },
+                  { label: 'Thermal', value: panelData.thermal_temp, min: 0, max: 100, unit: '°C', threshKey: 'thermal_temp', decimals: 2 },
+                  { label: 'CO2 Carbon', value: panelData.co2_ppm, min: 0, max: 2, unit: 'ppm', threshKey: 'co2_ppm', decimals: 3 },
+                  { label: 'UV', value: panelData.uv_detected, displayValue: panelData.uv_detected ? 'Terdeteksi' : 'Tidak Terdeteksi', min: 0, max: 1, unit: 'Status', threshKey: 'uv_detected', decimals: 0 },
+                ].map((g) => (
+                  <motion.div key={g.label} variants={staggerItem} whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                    <GaugeCard {...g} zones={ZONE_DEFAULT} />
+                  </motion.div>
+                ))}
               </>
             ) : (
               <div style={{ gridColumn: 'span 3', color: '#94a3b8', textAlign: 'center', padding: '40px 0' }}>
@@ -126,15 +140,17 @@ export default function Monitoring() {
 
             {/* Panel Status Detektor Kebakaran */}
             {detectors && (
-              <div style={{ gridColumn: 'span 3', marginTop: 8 }}>
+              <motion.div variants={staggerItem} style={{ gridColumn: 'span 3', marginTop: 8 }}>
                 <SensorStatusCard detectors={detectors} />
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
+          </motion.div>
         )}
 
         {/* ── GAS TAB ── */}
         {activeTab === 'gas' && (
+          <motion.div key="gas" variants={contentVariants} initial="initial" animate="animate" exit="exit">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Sub-tab Navigation */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -217,10 +233,12 @@ export default function Monitoring() {
               </div>
             )}
           </div>
+          </motion.div>
         )}
 
         {/* ── HYDRANT TAB ── */}
         {activeTab === 'hydrant' && (
+          <motion.div key="hydrant" variants={contentVariants} initial="initial" animate="animate" exit="exit">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Sub-tab Navigation */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -433,7 +451,9 @@ export default function Monitoring() {
               />
             )}
           </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );

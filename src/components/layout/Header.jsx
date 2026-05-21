@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Wifi, WifiOff, Clock } from 'lucide-react';
 import { useSensor } from '../../context/SensorContext';
 
@@ -67,12 +68,18 @@ export default function Header({ title }) {
           </button>
 
           {/* Dropdown */}
+          <AnimatePresence>
           {showAlerts && (
-            <div style={{
-              position: 'absolute', right: 0, top: '110%', width: 320, zIndex: 100,
-              background: '#0d1f38', border: '1px solid #1a3558', borderRadius: 12,
-              boxShadow: '0 16px 48px rgba(0,0,0,0.6)', overflow: 'hidden',
-            }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: 'absolute', right: 0, top: '110%', width: 320, zIndex: 100,
+                background: '#0d1f38', border: '1px solid #1a3558', borderRadius: 12,
+                boxShadow: '0 16px 48px rgba(0,0,0,0.6)', overflow: 'hidden',
+              }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a3558', fontWeight: 700, fontSize: 13, color: '#e2e8f0' }}>
                 Notifikasi Alert
               </div>
@@ -98,8 +105,9 @@ export default function Header({ title }) {
                   ))}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
 

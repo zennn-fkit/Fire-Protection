@@ -125,7 +125,6 @@ let latestSensorData = {
 };
 
 mqttClient.on('message', async (topic, message) => {
-  // ── 1. Parse JSON dulu — jika gagal, abaikan pesan ini ──
   let data;
   try {
     data = JSON.parse(message.toString());
@@ -134,122 +133,105 @@ mqttClient.on('message', async (topic, message) => {
     return;
   }
 
-  if (topic === 'projek_orange_pi/sensor/master') {
-    data.node_id = 'master';
-  } else if (topic === 'projek_orange_pi/sensor/env') {
-    data.node_id = 'env';
+  // Tentukan node_id
+  let nodeId = data.node_id;
+  if (nodeId === undefined) {
+    if (topic === 'projek_orange_pi/sensor/master' || topic === 'projek_orange_pi/sensor/env') {
+      nodeId = 1;
+    } else {
+      nodeId = 99; // unknown
+    }
   } else {
-    data.node_id = 'unknown';
+    nodeId = Number(nodeId);
   }
+  data.node_id = nodeId;
 
-  // Merge incoming data into global cache
+  // Merge into global cache for partial updates (old behavior compatibility)
   Object.keys(data).forEach(key => {
     if (data[key] !== undefined && data[key] !== null) {
       latestSensorData[key] = data[key];
     }
   });
 
-  let emitPayload = { ...data };
+  const {
+    voltage, current_amp, frequency, power_kw, power_watt, energy_kwh,
+    temperature, temperature_sht, humidity, thermal_temp, co2_ppm, uv_value,
+    pressure, gas_pressure, valve_status, gas_valve_status,
+    water_pressure, water_valve_status,
+    water_level, uv_detected, smoke_status, flame_status, heat_status, thermal_status,
+    ac_voltage, mq7_ppm, max_temp
+  } = data; // use raw data from this payload
 
-  // ── 2. Remap field khusus jika dari topik master ──
-  if (topic === 'projek_orange_pi/sensor/master') {
-    emitPayload = {
-      ...emitPayload,
-      sensor_voltage:  data.voltage  ?? null,   // simpan sebagai sensor_voltage
-      gas_pressure:    data.pressure ?? null,   // tampilkan di gauge tekanan gas
-      gas_valve:       data.valve_status ?? null, // status katup gas
-      valve_status_hw: data.valve_status ?? null, // status katup dari hardware
-      voltage:         undefined,               // hapus agar tidak mengisi gauge tegangan AC
-    };
-  } else if (topic === 'projek_orange_pi/sensor/env') {
-    // Topik env mengirimkan ac_voltage untuk tegangan listrik
-    emitPayload = {
-      ...emitPayload,
-      voltage: data.ac_voltage ?? null,
-    };
-  }
+  const final_voltage = voltage ?? ac_voltage ?? null;
+  const final_power_kw = power_watt != null ? power_watt / 1000 : (power_kw ?? null);
+  const final_temp = temperature_sht ?? temperature ?? null;
+  const final_pressure = gas_pressure ?? pressure ?? null;
+  let final_valve = gas_valve_status ?? water_valve_status ?? valve_status ?? null;
+  if (final_valve === 'TERBUKA' || final_valve === 'OPEN') final_valve = 'OPEN';
+  if (final_valve === 'TERTUTUP' || final_valve === 'CLOSED') final_valve = 'CLOSED';
 
-  // Hapus key undefined agar tidak terkirim ke frontend
-  Object.keys(emitPayload).forEach(k => emitPayload[k] === undefined && delete emitPayload[k]);
+  const final_co2 = co2_ppm ?? mq7_ppm ?? null;
+  const final_thermal = thermal_temp ?? max_temp ?? null;
+  const final_uv = uv_value ?? uv_detected ?? null;
 
-  // ── 3. Coba simpan ke DB & evaluasi auto-control ──
+  const effectiveSmokeStatus =
+    thresholdStatus(final_co2, GAS_WARNING, GAS_DANGER) ??
+    normalizeStatus(smoke_status) ??
+    'NORMAL';
+  const effectiveFlameStatus =
+    binaryStatus(final_uv ?? 0) ??
+    normalizeStatus(flame_status) ??
+    'NORMAL';
+  const effectiveHeatStatus =
+    thresholdStatus(final_temp, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
+    normalizeStatus(heat_status) ??
+    'NORMAL';
+  const effectiveThermalStatus =
+    thresholdStatus(final_thermal, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
+    normalizeStatus(thermal_status) ??
+    'NORMAL';
+
   let dbResult = null;
   let autoActions = [];
   let updatedActuators = {};
-  let normalizedStatuses = {};
+  let normalizedStatuses = {
+    smoke_status: effectiveSmokeStatus,
+    flame_status: effectiveFlameStatus,
+    heat_status: effectiveHeatStatus,
+    thermal_status: effectiveThermalStatus,
+  };
 
   try {
-    const {
-      current_amp, frequency, power_kw, energy_kwh,
-      temperature_sht, humidity,
-      pressure, water_level, water_pressure,
-      mq7_ppm, co2_ppm, max_temp, thermal_temp, uv_detected,
-      smoke_status, flame_status, heat_status, thermal_status,
-      ac_voltage, valve_status
-    } = latestSensorData; // Gunakan data gabungan dari cache
-
-    let dbValveStatus = 'CLOSED';
-    if (valve_status === 'TERBUKA' || valve_status === 'OPEN') dbValveStatus = 'OPEN';
-
-    const effectiveSmokeStatus =
-      thresholdStatus(mq7_ppm ?? co2_ppm, GAS_WARNING, GAS_DANGER) ??
-      normalizeStatus(smoke_status) ??
-      'NORMAL';
-    const effectiveFlameStatus =
-      binaryStatus(uv_detected ?? 0) ??
-      normalizeStatus(flame_status) ??
-      'NORMAL';
-    const effectiveHeatStatus =
-      thresholdStatus(temperature_sht, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
-      normalizeStatus(heat_status) ??
-      'NORMAL';
-    const effectiveThermalStatus =
-      thresholdStatus(max_temp ?? thermal_temp, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER) ??
-      normalizeStatus(thermal_status) ??
-      'NORMAL';
-
-    const normalizedData = {
-      ...data,
-      smoke_status: effectiveSmokeStatus,
-      flame_status: effectiveFlameStatus,
-      heat_status: effectiveHeatStatus,
-      thermal_status: effectiveThermalStatus,
-    };
-    normalizedStatuses = {
-      smoke_status: effectiveSmokeStatus,
-      flame_status: effectiveFlameStatus,
-      heat_status: effectiveHeatStatus,
-      thermal_status: effectiveThermalStatus,
-    };
-
     const [result] = await pool.execute(
       `INSERT INTO sensor_readings
        (node_id, voltage, current_amp, frequency, power_kw, energy_kwh, temperature, humidity,
-        pressure, water_pressure, co2_ppm, thermal_temp, smoke_status, flame_status, heat_status, thermal_status, water_level, valve_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pressure, water_pressure, co2_ppm, thermal_temp, uv_value, smoke_status, flame_status, heat_status, thermal_status, water_level, valve_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        1,
-        ac_voltage ?? null, current_amp ?? null, frequency ?? null, power_kw ?? null,
-        energy_kwh ?? null,
-        temperature_sht ?? null, humidity ?? null,
-        pressure ?? null, water_pressure ?? null,
-        mq7_ppm ?? co2_ppm ?? null, max_temp ?? thermal_temp ?? null,
-        effectiveSmokeStatus,
-        effectiveFlameStatus,
-        effectiveHeatStatus,
-        effectiveThermalStatus,
-        water_level ?? null,
-        dbValveStatus
+        nodeId,
+        final_voltage, current_amp ?? null, frequency ?? null, final_power_kw,
+        energy_kwh ?? null, final_temp, humidity ?? null,
+        final_pressure, water_pressure ?? null,
+        final_co2, final_thermal, final_uv,
+        effectiveSmokeStatus, effectiveFlameStatus, effectiveHeatStatus, effectiveThermalStatus,
+        water_level ?? null, final_valve ?? 'CLOSED'
       ]
     );
     dbResult = result;
 
     const [states] = await pool.execute('SELECT device, status FROM actuator_state');
     const currentStates = Object.fromEntries(states.map(s => [s.device, s.status]));
-    const { actions, alerts } = evaluateAutoControl(normalizedData, currentStates);
-    autoActions = actions;
+    
+    const normalizedData = {
+      ...data,
+      ...normalizedStatuses
+    };
 
-    for (const action of actions) {
+    const evalResult = evaluateAutoControl(normalizedData, currentStates);
+    autoActions = evalResult.actions;
+    const alerts = evalResult.alerts;
+
+    for (const action of autoActions) {
       await pool.execute(
         `UPDATE actuator_state SET status=?, triggered_by='AUTO', last_updated=NOW() WHERE device=?`,
         [action.status, action.device]
@@ -263,31 +245,37 @@ mqttClient.on('message', async (topic, message) => {
     for (const alert of alerts) {
       await pool.execute(
         `INSERT INTO alert_logs (node_id, alert_type, severity, message, value, unit) VALUES (?, ?, ?, ?, ?, ?)`,
-        [1, alert.alert_type, alert.severity, alert.message, alert.value ?? null, alert.unit ?? null]
+        [nodeId, alert.alert_type, alert.severity, alert.message, alert.value ?? null, alert.unit ?? null]
       );
-      io.emit('alert:new', { ...alert, timestamp: new Date(), node_id: 'master' });
+      io.emit('alert:new', { ...alert, timestamp: new Date(), node_id: nodeId });
     }
 
     const [updatedStates] = await pool.execute('SELECT device, status FROM actuator_state');
     updatedActuators = Object.fromEntries(updatedStates.map(s => [s.device, s.status]));
 
-    if (topic === 'projek_orange_pi/sensor/master') {
-      console.log(`📥 MQTT MASTER data saved — pressure: ${data.pressure}, valve: ${data.valve_status}`);
-    } else if (topic === 'projek_orange_pi/sensor/env') {
-      console.log(`📥 MQTT ENV data saved — temp: ${data.temperature_sht}C, voltage: ${data.ac_voltage}V, mq7: ${data.mq7_ppm}ppm`);
-    }
+    console.log(`📥 MQTT Node ${nodeId} data saved.`);
   } catch (dbErr) {
-    // ⚠️ DB gagal, tapi jangan blokir UI — tetap kirim data ke frontend
-    console.error('⚠️  MQTT DB error (data tetap diteruskan ke UI):', dbErr.message);
+    console.error('⚠️  MQTT DB error:', dbErr.message);
   }
 
-  // ── 4. Selalu emit ke frontend — baik DB sukses maupun gagal ──
+  // Bersihkan key undefined agar clean di frontend
+  const emitPayload = { ...data, ...normalizedStatuses };
+  Object.keys(emitPayload).forEach(k => emitPayload[k] === undefined && delete emitPayload[k]);
+
+  // Kembalikan ke format watt untuk dikonsumsi frontend
+  if (final_power_kw != null) emitPayload.power_watt = final_power_kw * 1000;
+  
+  // Spesifik penyesuaian payload jika hardware pakai format lama
+  if (topic === 'projek_orange_pi/sensor/master') {
+    emitPayload.gas_pressure = emitPayload.pressure;
+    emitPayload.gas_valve = emitPayload.valve_status;
+  }
+
   io.emit('sensor:update', {
     ...emitPayload,
-    ...normalizedStatuses,
-    id:          dbResult?.insertId ?? null,
-    timestamp:   new Date(),
-    actuators:   updatedActuators,
+    id: dbResult?.insertId ?? null,
+    timestamp: new Date(),
+    actuators: updatedActuators,
     autoActions: autoActions,
   });
 });

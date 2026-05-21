@@ -111,49 +111,20 @@ body {
 }
 
 @keyframes danger-pulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(248, 113, 113, 0.10);
-  }
-
-  50% {
-    box-shadow: 0 0 32px rgba(248, 113, 113, 0.25);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(248, 113, 113, 0.10); }
+  50% { box-shadow: 0 0 32px rgba(248, 113, 113, 0.25); }
 }
 
 /* ─── Glow Effects ──────────────────────────────────────────── */
-.glow-cyan {
-  filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.5));
-}
-
-.glow-emerald {
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
-}
-
-.glow-indigo {
-  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
-}
-
-.glow-red {
-  filter: drop-shadow(0 0 7px rgba(248, 113, 113, 0.5));
-}
+.glow-cyan { filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.5)); }
+.glow-emerald { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5)); }
+.glow-indigo { filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
+.glow-red { filter: drop-shadow(0 0 7px rgba(248, 113, 113, 0.5)); }
 
 /* ─── Status Badge ───────────────────────────────────────────── */
-.badge-normal {
-  color: #10B981;
-  background: rgba(16, 185, 129, 0.12);
-}
-
-.badge-warning {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
-}
-
-.badge-danger {
-  color: #f87171;
-  background: rgba(248, 113, 113, 0.12);
-}
+.badge-normal { color: #10B981; background: rgba(16, 185, 129, 0.12); }
+.badge-warning { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+.badge-danger { color: #f87171; background: rgba(248, 113, 113, 0.12); }
 
 /* ─── Sidebar ───────────────────────────────────────────────── */
 .sidebar {
@@ -172,9 +143,7 @@ body {
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar.collapsed {
-  width: 80px;
-}
+.sidebar.collapsed { width: 80px; }
 
 .sidebar-toggle {
   position: absolute;
@@ -243,9 +212,7 @@ body {
   flex: 1;
 }
 
-.main-content.collapsed {
-  margin-left: 80px;
-}
+.main-content.collapsed { margin-left: 80px; }
 
 /* ─── Header ────────────────────────────────────────────────── */
 .header {
@@ -297,11 +264,7 @@ body {
   height: 28px;
 }
 
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
 
 .toggle-slider {
   position: absolute;
@@ -371,76 +334,56 @@ body {
 
 /* ─── Animations ────────────────────────────────────────────── */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes blink {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.3;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-.animate-fadein {
-  animation: fadeInUp 0.5s ease forwards;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.animate-slidein {
-  animation: slideInLeft 0.4s ease forwards;
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50% { box-shadow: 0 0 16px currentColor, 0 0 32px currentColor; }
 }
 
-.animate-blink {
-  animation: blink 1.5s ease-in-out infinite;
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadein { animation: fadeInUp 0.5s ease forwards; }
+.animate-slidein { animation: slideInLeft 0.4s ease forwards; }
+.animate-blink { animation: blink 1.5s ease-in-out infinite; }
+.animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* ─── Water Tank ────────────────────────────────────────────── */
-.water-wave {
-  animation: wave 3s linear infinite;
-}
+.water-wave { animation: wave 3s linear infinite; }
 
 @keyframes wave {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-50%);
-  }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ─── Button ─────────────────────────────────────────────────── */
@@ -507,15 +450,8 @@ body {
 }
 
 @keyframes live-blink {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-  }
-
-  50% {
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
 }
 
 /* ─── Page Gradient ─────────────────────────────────────────── */
@@ -527,7 +463,7 @@ body {
   padding-top: 64px;
 }
 
-/* History page responsive table */
+/* ─── History Page ──────────────────────────────────────────── */
 .history-content,
 .history-table-card,
 .history-table-scroll {
@@ -542,13 +478,9 @@ body {
   min-width: 0;
 }
 
-.history-actions {
-  flex: 0 0 auto;
-}
+.history-actions { flex: 0 0 auto; }
 
-.history-table-scroll {
-  overflow-x: hidden !important;
-}
+.history-table-scroll { overflow-x: hidden !important; }
 
 .history-table {
   table-layout: fixed;
@@ -592,9 +524,7 @@ body {
   font-weight: 700;
 }
 
-.history-clickable-row {
-  cursor: pointer;
-}
+.history-clickable-row { cursor: pointer; }
 
 .history-clickable-row:hover td {
   background: rgba(59, 130, 246, 0.12);
@@ -607,13 +537,9 @@ body {
   }
 
   .history-table th,
-  .history-table td {
-    padding: 8px 5px;
-  }
+  .history-table td { padding: 8px 5px; }
 
-  .history-actions {
-    margin-left: 0 !important;
-  }
+  .history-actions { margin-left: 0 !important; }
 }
 
 @media (max-width: 760px) {
@@ -624,19 +550,9 @@ body {
     width: 100%;
   }
 
-  .history-actions {
-    width: 100%;
-  }
+  .history-actions { width: 100%; }
+  .history-actions .btn { justify-content: center; }
 
-  .history-actions .btn {
-    justify-content: center;
-  }
-
-  .history-table-scroll {
-    overflow-x: auto !important;
-  }
-
-  .history-table {
-    min-width: 720px;
-  }
+  .history-table-scroll { overflow-x: auto !important; }
+  .history-table { min-width: 720px; }
 }

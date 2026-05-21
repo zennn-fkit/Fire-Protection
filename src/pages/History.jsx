@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Download, FileText, RefreshCw, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { getHistory, getExport, getHistoryDates, getHistoryDateNodes } from '../utils/api';
@@ -360,8 +361,18 @@ export default function History() {
     <div className="page-gradient history-page" style={{ minHeight: '100vh' }}>
       <Header title="Riwayat Data Sensor" />
 
-      <div className="history-content" style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="card history-toolbar" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+      <motion.div
+        className="history-content"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <motion.div
+          className="card history-toolbar"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
           <select
             value={filters.node_id}
             onChange={e => updateFilter('node_id', e.target.value)}
@@ -394,7 +405,7 @@ export default function History() {
               <FileText size={13} /> PDF
             </button>
           </div>
-        </div>
+        </motion.div>
 
         <div className="history-breadcrumb" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           {view !== 'dates' && (
@@ -413,7 +424,12 @@ export default function History() {
           {loading && <RefreshCw size={12} color="#64748b" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />}
         </div>
 
-        <div className="card history-table-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <motion.div
+          className="card history-table-card"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          style={{ padding: 0, overflow: 'hidden' }}>
           <div className="history-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="data-table history-table">
               <colgroup>
@@ -438,7 +454,7 @@ export default function History() {
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
 
         {totalPages > 1 && view !== 'nodes' && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }}>
@@ -451,7 +467,7 @@ export default function History() {
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

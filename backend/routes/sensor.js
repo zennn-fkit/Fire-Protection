@@ -12,26 +12,33 @@ router.post('/data', async (req, res) => {
 
     const {
       node_id,
-      voltage, current_amp, frequency, power_kw,
-      temperature, humidity,
-      pressure, valve_status,
+      voltage, current_amp, frequency, power_kw, power_watt, energy_kwh,
+      temperature, temperature_sht, humidity, thermal_temp, co2_ppm, uv_value,
+      pressure, gas_pressure, valve_status, gas_valve_status,
+      water_pressure, water_valve_status,
       smoke_status, flame_status, heat_status, thermal_status,
       water_level,
     } = data;
+
+    const final_power_kw = power_watt != null ? power_watt / 1000 : (power_kw ?? null);
+    const final_temp = temperature_sht ?? temperature ?? null;
+    const final_pressure = gas_pressure ?? pressure ?? null;
+    const final_valve = gas_valve_status ?? water_valve_status ?? valve_status ?? null;
+
 
     if (!node_id) return res.status(400).json({ error: 'node_id is required' });
 
     // Insert reading
     const [result] = await pool.execute(
       `INSERT INTO sensor_readings
-       (node_id, voltage, current_amp, frequency, power_kw, temperature, humidity,
-        pressure, valve_status, smoke_status, flame_status, heat_status, thermal_status, water_level)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (node_id, voltage, current_amp, frequency, power_kw, energy_kwh, temperature, humidity,
+        pressure, water_pressure, co2_ppm, thermal_temp, uv_value, valve_status, smoke_status, flame_status, heat_status, thermal_status, water_level)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         node_id,
-        voltage    ?? null, current_amp  ?? null, frequency ?? null, power_kw  ?? null,
-        temperature ?? null, humidity    ?? null,
-        pressure    ?? null, valve_status ?? null,
+        voltage    ?? null, current_amp  ?? null, frequency ?? null, final_power_kw, energy_kwh ?? null,
+        final_temp, humidity    ?? null,
+        final_pressure, water_pressure ?? null, co2_ppm ?? null, thermal_temp ?? null, uv_value ?? null, final_valve,
         smoke_status  ?? 'NORMAL', flame_status  ?? 'NORMAL',
         heat_status   ?? 'NORMAL', thermal_status ?? 'NORMAL',
         water_level   ?? null,
