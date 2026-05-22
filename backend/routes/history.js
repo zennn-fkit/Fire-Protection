@@ -15,6 +15,7 @@ const AVG_COLUMNS = `
   AVG(water_pressure) as water_pressure,
   AVG(co2_ppm) as co2_ppm,
   AVG(thermal_temp) as thermal_temp,
+  AVG(uv_value) as uv_value,
   AVG(water_level) as water_level
 `;
 

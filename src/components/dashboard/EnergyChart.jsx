@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 
 const METRICS = [
-  { id: 'kw', label: 'Daya', unit: 'kW', color: '#f97316' },
+  { id: 'watt', label: 'Daya', unit: 'Watt', color: '#f97316' },
   { id: 'voltage', label: 'Tegangan', unit: 'V', color: '#3b82f6' },
   { id: 'amp', label: 'Arus', unit: 'A', color: '#c87941' },
   { id: 'hz', label: 'Frekuensi', unit: 'Hz', color: '#2a9d8f' },
@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function EnergyChart({
   data,
   title = 'Tren Realtime',
-  initialMetric = 'kw',
+  initialMetric = 'watt',
   embedded = false,
   chartHeight = 120,
 }) {
@@ -54,7 +54,7 @@ export default function EnergyChart({
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
           {title} ({activeMetric.label})
         </div>
-        
+
         {/* Menu Pilihan Grafik (Dropdown) */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button
@@ -121,8 +121,8 @@ export default function EnergyChart({
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id={`colorMetric-${activeMetric.id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={activeMetric.color} stopOpacity={0.5}/>
-              <stop offset="95%" stopColor={activeMetric.color} stopOpacity={0}/>
+              <stop offset="5%" stopColor={activeMetric.color} stopOpacity={0.5} />
+              <stop offset="95%" stopColor={activeMetric.color} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a3558" />
@@ -130,9 +130,9 @@ export default function EnergyChart({
             dataKey="time" tick={{ fill: '#475569', fontSize: 9 }}
             interval="preserveStartEnd" tickLine={false} axisLine={{ stroke: '#1a3558' }}
           />
-          <YAxis 
+          <YAxis
             domain={['auto', 'auto']}
-            tick={{ fill: '#475569', fontSize: 9 }} tickLine={false} axisLine={false} 
+            tick={{ fill: '#475569', fontSize: 9 }} tickLine={false} axisLine={false}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area

@@ -41,6 +41,7 @@ export default function MonitoringRealtimePanel({
         <UltrasonicSensorCard
           variant="minimal"
           embedded
+          hideLogo={true}
           distanceCm={waterDistance !== null ? waterDistance : maxTankCm * 0.313}
           maxDistanceCm={maxTankCm}
           title="Tangki Hydrant"

@@ -12,7 +12,7 @@ USE smart_fire_db;
 CREATE TABLE IF NOT EXISTS sensor_readings (
   id              BIGINT AUTO_INCREMENT PRIMARY KEY,
   timestamp       DATETIME DEFAULT CURRENT_TIMESTAMP,
-  node_id         TINYINT UNSIGNED NOT NULL COMMENT '1=Power, 2=Humidity1, 3=Humidity2, 4=Pressure',
+  node_id         TINYINT UNSIGNED NOT NULL COMMENT '1=Power/Env, 2=Gas Pressure, 3=Hydrant Pressure, 4=Inactive',
 
   -- Node 1: Power Sensor
   voltage         FLOAT    DEFAULT NULL COMMENT 'Volt AC',
@@ -21,18 +21,19 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
   power_kw        FLOAT    DEFAULT NULL COMMENT 'kW',
   energy_kwh      FLOAT    DEFAULT NULL COMMENT 'kWh - Akumulasi energi dari PZEM-004T',
 
-  -- Node 2 & 3: Humidity/Temperature Sensors
+  -- Node 1: SHT Temperature/Humidity
   temperature     FLOAT    DEFAULT NULL COMMENT 'Celsius',
   humidity        FLOAT    DEFAULT NULL COMMENT 'Percent RH',
 
-  -- Node 4: Pressure Sensor (Hydrant)
+  -- Node 2 & 3: Pressure Sensors
   pressure        FLOAT    DEFAULT NULL COMMENT 'Bar (Gas Pressure)',
   water_pressure  FLOAT    DEFAULT NULL COMMENT 'Bar (Hydrant Pressure)',
   valve_status    ENUM('OPEN','CLOSED') DEFAULT 'CLOSED',
 
-  -- Additional Sensors from Master Node
+  -- Additional Sensors from Node 1
   co2_ppm         FLOAT    DEFAULT NULL COMMENT 'PPM',
   thermal_temp    FLOAT    DEFAULT NULL COMMENT 'Celsius',
+  uv_value        FLOAT    DEFAULT NULL COMMENT 'UV Sensor Value',
 
   -- Fire Detectors (shared, sent by any node or gateway)
   smoke_status    ENUM('NORMAL','WARNING','DANGER') DEFAULT 'NORMAL',
@@ -116,6 +117,20 @@ INSERT IGNORE INTO actuator_state (device, status) VALUES
   ('SPRINKLER', 'OFF'),
   ('ALARM',     'OFF'),
   ('VALVE',     'CLOSED');
+
+-- ------------------------------------------------------------
+-- Table: energy_reset
+-- Stores energy kWh reset history for monthly tracking
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS energy_reset (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  reset_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  offset_kwh   FLOAT NOT NULL COMMENT 'Nilai energy_kwh saat reset dilakukan (snapshot)',
+  period_kwh   FLOAT DEFAULT NULL COMMENT 'Pemakaian kWh sejak reset sebelumnya',
+  note         VARCHAR(255) DEFAULT NULL COMMENT 'Catatan dari user, misal: Mei 2026',
+
+  INDEX idx_reset_at (reset_at)
+) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
 -- Sample data for testing (remove in production)

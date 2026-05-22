@@ -55,6 +55,7 @@ const initialState = {
   lastUpdate: null,
   // Sensor data
   panelData: null,
+  node2: null,
   node3: null,
   node4: null,
   detectors: null,
@@ -69,9 +70,11 @@ const initialState = {
   mockTickCount: 0,
   mockInitialized: false,
   // Timestamps kapan terakhir masing-masing field mendapat data REAL dari sensor
-  // Struktur: { master: number, node3: number, node4: number, detectors: number,
+  // Struktur: { master: number, node2: number, node3: number, node4: number, detectors: number,
   //             water_level: number, water_pressure: number, water_distance: number }
   realDataTimestamps: {},
+  // Energy reset offset
+  energyOffset: 0,
 };
 
 // ── Reducer ───────────────────────────────────────────────────
@@ -88,41 +91,37 @@ function reducer(state, action) {
       const newState = { ...state, lastUpdate: now };
       const rts = { ...state.realDataTimestamps };
 
-      if (d.node_id === 'master' || d.node_id === 'env') {
+      if (d.node_id === 1 || d.node_id === 'master' || d.node_id === 'env') {
         rts.master = nowMs;
-        // Update panelData.voltage dari data sensor
         const incomingVoltage = d.voltage;
-        const isRealACVoltage = incomingVoltage != null; // Terima semua nilai, termasuk 0V
+        const isRealACVoltage = incomingVoltage != null;
 
-        // Pemetaan untuk sensor baru (env)
-        const newThermalTemp = d.max_temp ?? d.thermal_temp;
-        const newCo2Ppm = d.mq7_ppm ?? d.co2_ppm;
-        const hasUvReading = d.uv_detected !== undefined;
-        let newUvDetected = hasUvReading ? d.uv_detected : 0;
+        const newThermalTemp = d.thermal_temp ?? d.max_temp;
+        const newCo2Ppm = d.co2_ppm ?? d.mq7_ppm;
+        const hasUvReading = d.uv_value !== undefined || d.uv_detected !== undefined;
+        let newUvDetected = hasUvReading ? (d.uv_value ?? d.uv_detected) : 0;
         const explicitFlameStatus = normalizeDetectorStatus(d.flame_status);
 
         newState.panelData = {
-          voltage:         isRealACVoltage ? incomingVoltage : (state.panelData?.voltage ?? 220),
-          current_amp:     d.current_amp     ?? (state.panelData?.current_amp     ?? 0),
-          power_kw:        d.power_kw        ?? (state.panelData?.power_kw        ?? 0),
-          energy_kwh:      d.energy_kwh      ?? (state.panelData?.energy_kwh      ?? 0),
-          temperature_sht: d.temperature_sht ?? (state.panelData?.temperature_sht ?? 25),
-          humidity:        d.humidity        ?? (state.panelData?.humidity        ?? 50),
-          thermal_temp:    newThermalTemp    ?? (state.panelData?.thermal_temp    ?? 25),
-          co2_ppm:         newCo2Ppm         ?? (state.panelData?.co2_ppm         ?? 0),
-          uv_detected:     newUvDetected,
-          // Simpan tegangan output sensor (0-10V) terpisah untuk keperluan debugging
-          sensor_voltage:  d.sensor_voltage  ?? (state.panelData?.sensor_voltage  ?? null),
-          frequency:       d.frequency       ?? (state.panelData?.frequency       ?? 50),
-          gas_pressure:    d.gas_pressure    ?? (state.panelData?.gas_pressure    ?? 0),
-          gas_valve:       d.gas_valve       ?? (state.panelData?.gas_valve       ?? 'CLOSED'),
+          voltage: isRealACVoltage ? incomingVoltage : (state.panelData?.voltage ?? 220),
+          current_amp: d.current_amp ?? (state.panelData?.current_amp ?? 0),
+          power_kw: d.power_kw ?? (state.panelData?.power_kw ?? 0),
+          power_watt: d.power_watt ?? ((d.power_kw ?? (state.panelData?.power_kw ?? 0)) * 1000),
+          energy_kwh: d.energy_kwh ?? (state.panelData?.energy_kwh ?? 0),
+          temperature_sht: d.temperature_sht ?? d.temperature ?? (state.panelData?.temperature_sht ?? 25),
+          humidity: d.humidity ?? (state.panelData?.humidity ?? 50),
+          thermal_temp: newThermalTemp ?? (state.panelData?.thermal_temp ?? 25),
+          co2_ppm: newCo2Ppm ?? (state.panelData?.co2_ppm ?? 0),
+          uv_value: newUvDetected,
+          frequency: d.frequency ?? (state.panelData?.frequency ?? 50),
         };
         const newPoint = {
-          time:    now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          kw:      d.power_kw     ?? (state.panelData?.power_kw     ?? 0),
+          time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          kw: d.power_kw ?? (state.panelData?.power_kw ?? 0),
+          watt: d.power_watt ?? (state.panelData?.power_watt ?? 0),
           voltage: isRealACVoltage ? incomingVoltage : (state.panelData?.voltage ?? 220),
-          amp:     d.current_amp  ?? (state.panelData?.current_amp  ?? 0),
-          hz:      50,
+          amp: d.current_amp ?? (state.panelData?.current_amp ?? 0),
+          hz: 50,
         };
         newState.energyHistory = [...(state.energyHistory || []).slice(-29), newPoint];
 
@@ -131,7 +130,7 @@ function reducer(state, action) {
         const explicitThermalStatus = normalizeDetectorStatus(d.thermal_status);
         const smokeFromGas = newCo2Ppm != null ? thresholdStatus(newCo2Ppm, GAS_WARNING, GAS_DANGER) : null;
         const flameFromUv = hasUvReading || explicitFlameStatus ? binaryDangerStatus(newUvDetected) : null;
-        const heatFromTemp = d.temperature_sht != null
+        const heatFromTemp = newState.panelData.temperature_sht != null
           ? thresholdStatus(newState.panelData.temperature_sht, FIRE_TEMP_WARNING, FIRE_TEMP_DANGER)
           : null;
         const thermalFromTemp = newThermalTemp != null
@@ -145,34 +144,39 @@ function reducer(state, action) {
         if (hasDetectorInput) {
           rts.detectors = nowMs;
           newState.detectors = {
-            smoke:   smokeFromGas     ?? explicitSmokeStatus   ?? (state.detectors?.smoke   ?? 'NORMAL'),
-            flame:   flameFromUv      ?? explicitFlameStatus   ?? (state.detectors?.flame   ?? 'NORMAL'),
-            heat:    heatFromTemp     ?? explicitHeatStatus    ?? (state.detectors?.heat    ?? 'NORMAL'),
-            thermal: thermalFromTemp  ?? explicitThermalStatus ?? (state.detectors?.thermal ?? 'NORMAL'),
+            smoke: smokeFromGas ?? explicitSmokeStatus ?? (state.detectors?.smoke ?? 'NORMAL'),
+            flame: flameFromUv ?? explicitFlameStatus ?? (state.detectors?.flame ?? 'NORMAL'),
+            heat: heatFromTemp ?? explicitHeatStatus ?? (state.detectors?.heat ?? 'NORMAL'),
+            thermal: thermalFromTemp ?? explicitThermalStatus ?? (state.detectors?.thermal ?? 'NORMAL'),
           };
         }
+      }
+      if (d.node_id === 2) {
+        rts.node2 = nowMs;
+        newState.node2 = {
+          gas_pressure: d.gas_pressure ?? d.pressure ?? (state.node2?.gas_pressure ?? 0),
+          gas_valve_status: d.gas_valve_status ?? d.valve_status ?? (state.node2?.gas_valve_status ?? 'CLOSED'),
+        };
       }
       if (d.node_id === 3) {
         rts.node3 = nowMs;
         newState.node3 = {
-          temperature: d.temperature ?? (state.node3?.temperature ?? 25),
-          humidity:    d.humidity    ?? (state.node3?.humidity    ?? 50),
+          water_pressure: d.water_pressure ?? (state.node3?.water_pressure ?? 0),
+          water_valve_status: d.water_valve_status ?? d.valve_status ?? (state.node3?.water_valve_status ?? 'CLOSED'),
         };
       }
       if (d.node_id === 4) {
         rts.node4 = nowMs;
-        newState.node4 = {
-          pressure:     d.pressure     ?? (state.node4?.pressure     ?? 0),
-          valve_status: d.valve_status ?? (state.node4?.valve_status ?? 'CLOSED'),
-        };
+        // Inactive - abaikan atau simpan jika diperlukan
+        newState.node4 = state.node4 || { inactive: true };
       }
-      if (d.water_level    != null) { rts.water_level    = nowMs; newState.water_level    = d.water_level; }
+      if (d.water_level != null) { rts.water_level = nowMs; newState.water_level = d.water_level; }
       // Terima water_pressure dari field asli
       if (d.water_pressure != null) {
         rts.water_pressure = nowMs;
         newState.water_pressure = d.water_pressure;
       }
-      if (d.water_distance != null)   { rts.water_distance = nowMs; newState.water_distance = d.water_distance; }
+      if (d.water_distance != null) { rts.water_distance = nowMs; newState.water_distance = d.water_distance; }
       // Status katup dari hardware ESP32 (valve_status_hw)
       if (d.valve_status_hw != null) {
         // Update actuators state
@@ -216,14 +220,15 @@ function reducer(state, action) {
           lastUpdate: now,
           // Hanya inisialisasi field yang belum dapat data real
           panelData: isFresh(rts, 'master') ? state.panelData : {
-            voltage: 220.5, current_amp: 150.2, power_kw: 1.8, energy_kwh: 1245.5,
-            temperature_sht: 28.35, humidity: 54.2, thermal_temp: 27.2, co2_ppm: 0.014, uv_detected: 0,
-            gas_pressure: 5.2, gas_valve: 'CLOSED',
+            voltage: 220.5, current_amp: 150.2, power_kw: 1.8, power_watt: 1800, energy_kwh: 1245.5,
+            temperature_sht: 28.35, humidity: 54.2, thermal_temp: 27.2, co2_ppm: 0.014, uv_value: 0,
           },
+          node2: isFresh(rts, 'node2') ? state.node2
+            : { gas_pressure: 5.2, gas_valve_status: 'CLOSED' },
           node3: isFresh(rts, 'node3') ? state.node3
-            : { temperature: 30.1, humidity: 57.8 },
+            : { water_pressure: 4.8, water_valve_status: 'CLOSED' },
           node4: isFresh(rts, 'node4') ? state.node4
-            : { pressure: 5.2, valve_status: 'CLOSED' },
+            : { inactive: true },
           detectors: isFresh(rts, 'detectors') ? state.detectors
             : { smoke: 'NORMAL', flame: 'NORMAL', heat: 'NORMAL', thermal: 'NORMAL' },
           water_level: isFresh(rts, 'water_level') ? state.water_level : 78,
@@ -231,10 +236,10 @@ function reducer(state, action) {
           water_distance: isFresh(rts, 'water_distance') ? state.water_distance : 62.0,
           energyHistory: isFresh(rts, 'master') ? state.energyHistory : Array.from({ length: 20 }, (_, i) => ({
             time: new Date(Date.now() - (19 - i) * 30000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            kw:      +(1.4 + Math.random() * 0.8).toFixed(2),
+            kw: +(1.4 + Math.random() * 0.8).toFixed(2),
             voltage: +(218 + Math.random() * 6).toFixed(1),
-            amp:     +(148 + Math.random() * 2).toFixed(1),
-            hz:      +(50  + Math.random() * 0.4).toFixed(2),
+            amp: +(148 + Math.random() * 2).toFixed(1),
+            hz: +(50 + Math.random() * 0.4).toFixed(2),
           })),
         };
       }
@@ -245,44 +250,46 @@ function reducer(state, action) {
       // panelData + energyHistory (sumber: master node)
       if (!isFresh(rts, 'master') && state.panelData) {
         const newPoint = {
-          time:    now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          kw:      +(state.panelData.power_kw    + (Math.random() - 0.5) * 0.1).toFixed(2),
-          voltage: +(state.panelData.voltage     + (Math.random() - 0.5) * 1).toFixed(1),
-          amp:     +(state.panelData.current_amp + (Math.random() - 0.5) * 2).toFixed(1),
-          hz:      50,
+          time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          kw: +(state.panelData.power_kw + (Math.random() - 0.5) * 0.1).toFixed(2),
+          watt: +(state.panelData.power_watt + (Math.random() - 0.5) * 100).toFixed(0),
+          voltage: +(state.panelData.voltage + (Math.random() - 0.5) * 1).toFixed(1),
+          amp: +(state.panelData.current_amp + (Math.random() - 0.5) * 2).toFixed(1),
+          hz: 50,
         };
         nextState.panelData = {
-          voltage:         +(state.panelData.voltage         + (Math.random() - 0.5) * 1.5).toFixed(1),
-          current_amp:     +(state.panelData.current_amp     + (Math.random() - 0.5) * 2).toFixed(1),
-          power_kw:        +(state.panelData.power_kw        + (Math.random() - 0.5) * 0.1).toFixed(2),
-          energy_kwh:      +(state.panelData.energy_kwh      + 0.01).toFixed(2),
+          voltage: +(state.panelData.voltage + (Math.random() - 0.5) * 1.5).toFixed(1),
+          current_amp: +(state.panelData.current_amp + (Math.random() - 0.5) * 2).toFixed(1),
+          power_kw: +(state.panelData.power_kw + (Math.random() - 0.5) * 0.1).toFixed(2),
+          power_watt: +(state.panelData.power_watt + (Math.random() - 0.5) * 100).toFixed(0),
+          energy_kwh: +(state.panelData.energy_kwh + 0.01).toFixed(2),
           temperature_sht: +(state.panelData.temperature_sht + (Math.random() - 0.5) * 0.1).toFixed(2),
-          humidity:        +(state.panelData.humidity        + (Math.random() - 0.5) * 0.5).toFixed(1),
-          thermal_temp:    +(state.panelData.thermal_temp    + (Math.random() - 0.5) * 0.1).toFixed(1),
-          co2_ppm:         +(Math.max(0, state.panelData.co2_ppm + (Math.random() - 0.5) * 0.002)).toFixed(3),
-          uv_detected:     Math.random() > 0.95
-            ? (state.panelData.uv_detected === 1 ? 0 : 1)
-            : state.panelData.uv_detected,
-          gas_pressure:    +(Math.max(0, (state.panelData.gas_pressure || 0) + (Math.random() - 0.5) * 0.5)).toFixed(2),
-          gas_valve:       state.panelData.gas_valve || 'CLOSED',
+          humidity: +(state.panelData.humidity + (Math.random() - 0.5) * 0.5).toFixed(1),
+          thermal_temp: +(state.panelData.thermal_temp + (Math.random() - 0.5) * 0.1).toFixed(1),
+          co2_ppm: +(Math.max(0, state.panelData.co2_ppm + (Math.random() - 0.5) * 0.002)).toFixed(3),
+          uv_value: Math.random() > 0.95
+            ? (state.panelData.uv_value === 1 ? 0 : 1)
+            : state.panelData.uv_value,
         };
         nextState.energyHistory = [...state.energyHistory.slice(-29), newPoint];
       }
 
-      // node3 (suhu & kelembaban ruangan)
-      if (!isFresh(rts, 'node3') && state.node3) {
-        nextState.node3 = {
-          temperature: +(state.node3.temperature + (Math.random() - 0.5) * 0.3).toFixed(1),
-          humidity:    +(state.node3.humidity    + (Math.random() - 0.5) * 0.5).toFixed(1),
+      if (!isFresh(rts, 'node2') && state.node2) {
+        nextState.node2 = {
+          ...state.node2,
+          gas_pressure: +(Math.max(0, state.node2.gas_pressure + (Math.random() - 0.5) * 0.1)).toFixed(2),
         };
       }
 
-      // node4 (pressure hydrant jaringan pipa)
-      if (!isFresh(rts, 'node4') && state.node4) {
-        nextState.node4 = {
-          ...state.node4,
-          pressure: +(state.node4.pressure + (Math.random() - 0.5) * 0.1).toFixed(2),
+      if (!isFresh(rts, 'node3') && state.node3) {
+        nextState.node3 = {
+          ...state.node3,
+          water_pressure: +(Math.max(0, state.node3.water_pressure + (Math.random() - 0.5) * 0.1)).toFixed(2),
         };
+      }
+
+      if (!isFresh(rts, 'node4') && state.node4) {
+        nextState.node4 = state.node4;
       }
 
       // water_level (persentase tangki)
@@ -309,6 +316,9 @@ function reducer(state, action) {
       return nextState;
     }
 
+    case 'SET_ENERGY_OFFSET':
+      return { ...state, energyOffset: action.payload };
+
     default:
       return state;
   }
@@ -319,14 +329,15 @@ const SensorContext = createContext(null);
 
 export function SensorProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const setConnected  = useCallback(v => dispatch({ type: 'SET_CONNECTED',  payload: v }), []);
-  const sensorUpdate  = useCallback(d => dispatch({ type: 'SENSOR_UPDATE',  payload: d }), []);
-  const alertNew      = useCallback(d => dispatch({ type: 'ALERT_NEW',      payload: d }), []);
+  const setConnected = useCallback(v => dispatch({ type: 'SET_CONNECTED', payload: v }), []);
+  const sensorUpdate = useCallback(d => dispatch({ type: 'SENSOR_UPDATE', payload: d }), []);
+  const alertNew = useCallback(d => dispatch({ type: 'ALERT_NEW', payload: d }), []);
   const controlUpdate = useCallback(d => dispatch({ type: 'CONTROL_UPDATE', payload: d }), []);
-  const mockTick      = useCallback(() => dispatch({ type: 'MOCK_TICK' }), []);
+  const mockTick = useCallback(() => dispatch({ type: 'MOCK_TICK' }), []);
+  const setEnergyOffset = useCallback(v => dispatch({ type: 'SET_ENERGY_OFFSET', payload: v }), []);
 
   return (
-    <SensorContext.Provider value={{ state, setConnected, sensorUpdate, alertNew, controlUpdate, mockTick }}>
+    <SensorContext.Provider value={{ state, setConnected, sensorUpdate, alertNew, controlUpdate, mockTick, setEnergyOffset }}>
       {children}
     </SensorContext.Provider>
   );

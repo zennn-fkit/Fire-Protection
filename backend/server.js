@@ -12,6 +12,7 @@ import sensorRoutes     from './routes/sensor.js';
 import historyRoutes   from './routes/history.js';
 import alertRoutes     from './routes/alerts.js';
 import controlRoutes   from './routes/control.js';
+import energyResetRoutes from './routes/energyReset.js';
 import waterUsageRoutes, { calcVolume } from './routes/waterUsage.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -91,9 +92,16 @@ const mqttClient = mqtt.connect('mqtt://broker.emqx.io');
 
 mqttClient.on('connect', () => {
   console.log('🌐 Connected to MQTT Broker (broker.emqx.io)');
-  mqttClient.subscribe(['projek_orange_pi/sensor/master', 'projek_orange_pi/sensor/env'], (err) => {
+  const topics = [
+    'projek_orange_pi/sensor/node1',
+    'projek_orange_pi/sensor/node2',
+    'projek_orange_pi/sensor/node3',
+    'projek_orange_pi/sensor/master',
+    'projek_orange_pi/sensor/env',
+  ];
+  mqttClient.subscribe(topics, (err) => {
     if (!err) {
-      console.log('📡 Subscribed to MQTT topics: projek_orange_pi/sensor/master & projek_orange_pi/sensor/env');
+      console.log(`📡 Subscribed to MQTT topics: ${topics.join(', ')}`);
     } else {
       console.error('❌ MQTT Subscribe error:', err);
     }
@@ -136,8 +144,12 @@ mqttClient.on('message', async (topic, message) => {
   // Tentukan node_id
   let nodeId = data.node_id;
   if (nodeId === undefined) {
-    if (topic === 'projek_orange_pi/sensor/master' || topic === 'projek_orange_pi/sensor/env') {
+    if (topic === 'projek_orange_pi/sensor/node1' || topic === 'projek_orange_pi/sensor/master' || topic === 'projek_orange_pi/sensor/env') {
       nodeId = 1;
+    } else if (topic === 'projek_orange_pi/sensor/node2') {
+      nodeId = 2;
+    } else if (topic === 'projek_orange_pi/sensor/node3') {
+      nodeId = 3;
     } else {
       nodeId = 99; // unknown
     }
@@ -163,7 +175,8 @@ mqttClient.on('message', async (topic, message) => {
   } = data; // use raw data from this payload
 
   const final_voltage = voltage ?? ac_voltage ?? null;
-  const final_power_kw = power_watt != null ? power_watt / 1000 : (power_kw ?? null);
+  // Karena ESP32 mengirim data Watt di dalam variabel power_kw, kita bagi 1000 agar menjadi kW yang sebenarnya.
+  const final_power_kw = power_watt != null ? power_watt / 1000 : (power_kw != null ? power_kw / 1000 : null);
   const final_temp = temperature_sht ?? temperature ?? null;
   const final_pressure = gas_pressure ?? pressure ?? null;
   let final_valve = gas_valve_status ?? water_valve_status ?? valve_status ?? null;
@@ -258,12 +271,24 @@ mqttClient.on('message', async (topic, message) => {
     console.error('⚠️  MQTT DB error:', dbErr.message);
   }
 
-  // Bersihkan key undefined agar clean di frontend
-  const emitPayload = { ...data, ...normalizedStatuses };
+  const emitPayload = { 
+    ...data, 
+    ...normalizedStatuses,
+    voltage: final_voltage,
+    power_kw: final_power_kw,
+    power_watt: final_power_kw != null ? final_power_kw * 1000 : null,
+    temperature_sht: final_temp,
+    temperature: final_temp,
+    pressure: final_pressure,
+    gas_pressure: final_pressure,
+    co2_ppm: final_co2,
+    thermal_temp: final_thermal,
+    uv_value: final_uv,
+    valve_status: final_valve,
+    gas_valve_status: final_valve,
+    water_valve_status: final_valve
+  };
   Object.keys(emitPayload).forEach(k => emitPayload[k] === undefined && delete emitPayload[k]);
-
-  // Kembalikan ke format watt untuk dikonsumsi frontend
-  if (final_power_kw != null) emitPayload.power_watt = final_power_kw * 1000;
   
   // Spesifik penyesuaian payload jika hardware pakai format lama
   if (topic === 'projek_orange_pi/sensor/master') {
@@ -291,6 +316,7 @@ app.use('/api/history',     historyRoutes);
 app.use('/api/alerts',      alertRoutes);
 app.use('/api/control',     controlRoutes);
 app.use('/api/water-usage', waterUsageRoutes);
+app.use('/api/energy-reset', energyResetRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'OK', time: new Date() }));

@@ -7,7 +7,12 @@ import { exportToPDF } from '../utils/exportPDF';
 import { exportToCSV } from '../utils/exportCSV';
 import Header from '../components/layout/Header';
 
-const NODE_LABELS = { 1: 'Master Node (ESP32)', 2: 'Node 2 (Inactive)', 3: 'Node 3 (Inactive)', 4: 'Node 4 (Inactive)' };
+const NODE_LABELS = {
+  1: 'Power, SHT, Thermal, CO2, UV',
+  2: 'Smart Gas CO2',
+  3: 'Hydrant Pressure',
+  4: 'Node 4 (Inactive)',
+};
 const STATUS_COLOR = { NORMAL: '#10b981', WARNING: '#f59e0b', DANGER: '#ef4444' };
 const LIMIT = 50;
 
@@ -245,6 +250,7 @@ export default function History() {
     { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
     { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
     { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+    { label: 'UV', render: r => val(r.uv_value, 0) },
     { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
     { label: 'Level Air (%)', render: r => val(r.water_level) },
   ];
@@ -265,35 +271,55 @@ export default function History() {
     { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
     { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
     { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+    { label: 'UV', render: r => val(r.uv_value, 0) },
     { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
     { label: 'Level Air (%)', render: r => val(r.water_level) },
     { label: 'Asap', render: r => <StatusBadge v={r.smoke_status} /> },
     { label: 'Api', render: r => <StatusBadge v={r.flame_status} /> },
   ];
 
-  const detailColumns = [
-    { label: 'Waktu', render: r => r.timestamp ? format(new Date(r.timestamp), 'HH:mm:ss') : '-' },
-    { label: 'Node', render: r => <span className="history-node-badge">N-{r.node_id}</span> },
-    { label: 'Tegangan (V)', render: r => val(r.voltage) },
-    { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
-    {
-      label: 'Energy (kWh)',
-      render: r => r.energy_kwh != null
-        ? <span style={{ color: '#f97316', fontWeight: 700 }}>{Number(r.energy_kwh).toFixed(2)}</span>
-        : <span style={{ color: '#475569' }}>-</span>
-    },
-    { label: 'Sensor Suhu (C)', render: r => val(r.temperature) },
-    { label: 'Kelembaban (%)', render: r => val(r.humidity) },
-    { label: 'Sensor Karbon (PPM)', render: r => val(r.co2_ppm, 2) },
-    { label: 'Sensor Gas (Bar)', render: r => val(r.pressure, 2) },
-    { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
-    { label: 'Tekanan Air (Bar)', render: r => val(r.water_pressure, 2) },
-    { label: 'Level Air (%)', render: r => val(r.water_level) },
-    { label: 'Asap', render: r => <StatusBadge v={r.smoke_status} /> },
-    { label: 'Api', render: r => <StatusBadge v={r.flame_status} /> },
-  ];
+  const getDetailColumns = (nodeId) => {
+    const base = [
+      { label: 'Waktu', render: r => r.timestamp ? format(new Date(r.timestamp), 'HH:mm:ss') : '-' },
+      { label: 'Node', render: r => <span className="history-node-badge">N-{r.node_id}</span> },
+    ];
+    if (nodeId === '1') {
+      return base.concat([
+        { label: 'Tegangan (V)', render: r => val(r.voltage) },
+        { label: 'Arus (A)', render: r => val(r.current_amp) },
+        { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+        { label: 'Energy (kWh)', render: r => r.energy_kwh != null ? <span style={{ color: '#f97316', fontWeight: 700 }}>{Number(r.energy_kwh).toFixed(2)}</span> : <span style={{ color: '#475569' }}>-</span> },
+        { label: 'Suhu (C)', render: r => val(r.temperature) },
+        { label: 'Kelembaban (%)', render: r => val(r.humidity) },
+        { label: 'Thermal (C)', render: r => val(r.thermal_temp) },
+        { label: 'CO2 (PPM)', render: r => val(r.co2_ppm, 3) },
+        { label: 'UV', render: r => val(r.uv_value, 0) },
+      ]);
+    } else if (nodeId === '2') {
+      return base.concat([
+        { label: 'Pressure Gas (Bar)', render: r => val(r.pressure, 2) },
+        { label: 'Valve Gas', render: r => <StatusBadge v={r.valve_status} /> },
+      ]);
+    } else if (nodeId === '3') {
+      return base.concat([
+        { label: 'Pressure Air (Bar)', render: r => val(r.water_pressure, 2) },
+        { label: 'Valve Hydrant', render: r => <StatusBadge v={r.valve_status} /> },
+      ]);
+    } else {
+      return base.concat([
+        { label: 'Tegangan (V)', render: r => val(r.voltage) },
+        { label: 'Daya (kW)', render: r => val(r.power_kw, 2) },
+        { label: 'Suhu (C)', render: r => val(r.temperature) },
+        { label: 'Pressure Gas', render: r => val(r.pressure, 2) },
+        { label: 'Pressure Air', render: r => val(r.water_pressure, 2) },
+        { label: 'Level Air (%)', render: r => val(r.water_level) },
+        { label: 'Asap', render: r => <StatusBadge v={r.smoke_status} /> },
+        { label: 'Api', render: r => <StatusBadge v={r.flame_status} /> },
+      ]);
+    }
+  };
 
-  const currentColumns = view === 'dates' ? dateColumns : view === 'nodes' ? nodeColumns : detailColumns;
+  const currentColumns = view === 'dates' ? dateColumns : view === 'nodes' ? nodeColumns : getDetailColumns(selectedNode);
   const currentRows = view === 'dates' ? dates : view === 'nodes' ? nodeRows : rows;
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -308,6 +334,7 @@ export default function History() {
     { header: 'Sensor Karbon (PPM)', dataKey: 'co2_ppm', accessor: r => r.co2_ppm != null ? Number(r.co2_ppm).toFixed(2) : '' },
     { header: 'Sensor Gas (Bar)', dataKey: 'pressure', accessor: r => r.pressure != null ? Number(r.pressure).toFixed(2) : '' },
     { header: 'Thermal (C)', dataKey: 'thermal_temp', accessor: r => r.thermal_temp != null ? Number(r.thermal_temp).toFixed(1) : '' },
+    { header: 'UV', dataKey: 'uv_value', accessor: r => r.uv_value != null ? Number(r.uv_value).toFixed(0) : '' },
     { header: 'Tekanan Air (Bar)', dataKey: 'water_pressure', accessor: r => r.water_pressure != null ? Number(r.water_pressure).toFixed(2) : '' },
     { header: 'Level Air (%)', dataKey: 'water_level', accessor: r => r.water_level != null ? Number(r.water_level).toFixed(1) : '' },
   ];

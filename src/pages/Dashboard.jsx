@@ -1,11 +1,15 @@
 
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ZONE_DEFAULT, ZONE_VOLTAGE } from '../utils/gaugeZones';
 import { useSensor } from '../context/SensorContext';
+import { getEnergyReset, postEnergyReset } from '../utils/api';
 import GaugeCard from '../components/dashboard/GaugeCard';
+import EnergyResetModal from '../components/dashboard/EnergyResetModal';
 import MonitoringRealtimePanel from '../components/dashboard/MonitoringRealtimePanel';
 import SensorStatusCard from '../components/dashboard/SensorStatusCard';
 import Header from '../components/layout/Header';
+import { Zap, Activity, Cpu, BatteryCharging } from 'lucide-react';
 
 // Framer Motion variants
 const pageVariants = {
@@ -34,10 +38,49 @@ const alertVariants = {
 };
 
 export default function Dashboard() {
-  const { state } = useSensor();
-  const { panelData, node3, detectors, water_distance, energyHistory } = state;
+  const { state, setEnergyOffset } = useSensor();
+  const { panelData, node3, detectors, water_distance, energyHistory, energyOffset } = state;
+
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [lastResetDate, setLastResetDate] = useState(null);
 
   const MAX_TANK_CM = 200;
+
+  // Fetch energy offset on mount
+  useEffect(() => {
+    getEnergyReset()
+      .then(res => {
+        const data = res.data;
+        if (data.current_offset != null) {
+          setEnergyOffset(data.current_offset);
+        }
+        if (data.last_reset) {
+          setLastResetDate(data.last_reset);
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Could not fetch energy reset offset:', err.message);
+      });
+  }, [setEnergyOffset]);
+
+  // Handle reset confirmation
+  const handleConfirmReset = useCallback(async ({ current_kwh, note }) => {
+    setResetLoading(true);
+    try {
+      const res = await postEnergyReset({ current_kwh, note });
+      if (res.data.success) {
+        setEnergyOffset(current_kwh);
+        setLastResetDate(new Date().toISOString());
+        setShowResetModal(false);
+      }
+    } catch (err) {
+      console.error('❌ Energy reset failed:', err.message);
+      alert('Gagal mereset energy meter. Silakan coba lagi.');
+    } finally {
+      setResetLoading(false);
+    }
+  }, [setEnergyOffset]);
 
   const toNumber = value => {
     const numberValue = Number(value);
@@ -46,18 +89,28 @@ export default function Dashboard() {
   const dangerValues = [
     toNumber(panelData?.temperature_sht) >= 60,
     toNumber(panelData?.thermal_temp) >= 60,
-    toNumber(node3?.temperature) >= 60,
     toNumber(panelData?.co2_ppm) >= 1.5,
-    Number(panelData?.uv_detected) === 1,
+    Number(panelData?.uv_value) === 1,
   ];
   const anyDanger = dangerValues.some(Boolean);
 
+  // Calculate display energy (sensor value minus offset)
+  const rawEnergyKwh = panelData?.energy_kwh ?? 0;
+  const displayEnergyKwh = Math.max(0, rawEnergyKwh - energyOffset);
+
   const gauges = panelData ? [
-    { label: 'Tegangan', value: panelData.voltage, min: 180, max: 260, unit: 'Volt AC', threshKey: 'voltage', decimals: 1, zones: ZONE_VOLTAGE },
-    { label: 'Arus', value: panelData.current_amp, min: 0, max: 180, unit: 'Ampere', threshKey: 'current_amp', decimals: 1, zones: ZONE_DEFAULT },
-    { label: 'Watt', value: panelData.power_kw * 1000, min: 0, max: 3000, unit: 'Watt', threshKey: 'power_kw', decimals: 0, zones: ZONE_DEFAULT },
-    { label: 'Energy', value: panelData.energy_kwh, min: 0, max: 10000, unit: 'kWh', threshKey: 'energy_kwh', decimals: 2, zones: ZONE_DEFAULT },
+    { label: 'Tegangan', value: panelData.voltage, min: 180, max: 260, unit: 'Volt AC', threshKey: 'voltage', decimals: 1, zones: ZONE_VOLTAGE, icon: Zap },
+    { label: 'Arus', value: panelData.current_amp, min: 0, max: 180, unit: 'Ampere', threshKey: 'current_amp', decimals: 2, zones: ZONE_DEFAULT, icon: Activity },
+    { label: 'Watt', value: panelData.power_watt, min: 0, max: 3000, unit: 'Watt', threshKey: 'power_kw', decimals: 2, zones: ZONE_DEFAULT, icon: Cpu },
+    {
+      label: 'Energy', value: displayEnergyKwh, min: 0, max: 10000, unit: 'kWh',
+      threshKey: 'energy_kwh', decimals: 2, zones: ZONE_DEFAULT,
+      showReset: true,
+      onReset: () => setShowResetModal(true),
+      icon: BatteryCharging,
+    },
   ] : [];
+
 
   return (
     <div className="page-gradient">
@@ -106,6 +159,17 @@ export default function Dashboard() {
           />
         </motion.div>
       </motion.div>
+
+      {/* Energy Reset Modal */}
+      <EnergyResetModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={handleConfirmReset}
+        currentKwh={rawEnergyKwh}
+        energyOffset={energyOffset}
+        lastResetDate={lastResetDate}
+        loading={resetLoading}
+      />
     </div>
   );
 }

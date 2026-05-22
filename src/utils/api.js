@@ -27,4 +27,8 @@ export const getWaterUsageConfig = ()       => api.get('/api/water-usage/config'
 export const saveWaterUsageConfig = (data)  => api.post('/api/water-usage/config', data);
 export const snapshotWaterUsage   = (data)  => api.post('/api/water-usage/snapshot', data);
 
+// ── Energy Reset ──────────────────────────────────────────────
+export const getEnergyReset  = ()     => api.get('/api/energy-reset');
+export const postEnergyReset = (data) => api.post('/api/energy-reset', data);
+
 export default api;

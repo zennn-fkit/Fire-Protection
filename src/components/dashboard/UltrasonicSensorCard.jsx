@@ -26,6 +26,7 @@ export default function UltrasonicSensorCard({
   compact = false,
   variant,
   embedded = false,
+  hideLogo = false,
 }) {
   const resolvedVariant = variant || (compact ? 'compact' : 'default');
   const isMinimal = resolvedVariant === 'minimal';
@@ -74,13 +75,15 @@ export default function UltrasonicSensorCard({
         padding: '12px 16px 8px',
         borderBottom: embedded ? 'none' : '1px solid rgba(26,53,88,0.6)',
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <Waves size={16} color="#38bdf8" />
-        </div>
+        {!hideLogo && (
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Waves size={16} color="#38bdf8" />
+          </div>
+        )}
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {title}
